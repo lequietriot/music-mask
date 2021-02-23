@@ -88,34 +88,64 @@ public class MusicMaskPlugin extends Plugin
         {
             try
             {
-                File resource = new File("resources/MusicMask/RLMusicMask/");
-                maskPath = resource.getAbsolutePath();
-                System.out.println(maskPath);
-                File[] midiFiles = new File(maskPath + "/MIDI/").listFiles();
-                if (midiFiles != null)
+                if (!musicMaskConfig.getShuffleMode())
                 {
-                    for (File midi : midiFiles)
+                    File resource = new File("resources/MusicMask/RLMusicMask/");
+                    maskPath = resource.getAbsolutePath();
+                    File[] midiFiles = new File(maskPath + "/MIDI/").listFiles();
+                    if (midiFiles != null)
                     {
-                        if (midi.getName().contains(" - "))
+                        for (File midi : midiFiles)
                         {
-                            int index = midi.getName().lastIndexOf(" - ");
-                            String name = midi.getName().substring(index).replace(".mid", "").replace(" - ", "").trim();
-
-                            if (name.equalsIgnoreCase(currentSong))
+                            if (midi.getName().contains(" - "))
                             {
-                                initMidiStream(midi);
-                                System.out.println(name + " is playing!");
-                            }
-                        }
+                                int index = midi.getName().lastIndexOf(" - ");
+                                String name = midi.getName().substring(index).replace(".mid", "").replace(" - ", "").trim();
 
-                        if (midi.getName().replace(".mid", "").trim().equalsIgnoreCase(currentSong))
-                        {
-                            initMidiStream(midi);
-                            System.out.println(midi.getName() + " is playing!");
+                                if (name.equalsIgnoreCase(currentSong))
+                                {
+                                    initMidiStream(midi, musicMaskConfig.getShuffleMode(), musicMaskConfig.getLoopingMode());
+                                    System.out.println(name + " is playing!");
+                                }
+                            }
+
+                            if (midi.getName().replace(".mid", "").trim().equalsIgnoreCase(currentSong))
+                            {
+                                initMidiStream(midi, musicMaskConfig.getShuffleMode(), musicMaskConfig.getLoopingMode());
+                                System.out.println(midi.getName() + " is playing!");
+                            }
                         }
                     }
                 }
+                else
+                {
+                    File resource = new File("resources/MusicMask/RLMusicMask/");
+                    maskPath = resource.getAbsolutePath();
+                    File[] midiFiles = new File(maskPath + "/MIDI/").listFiles();
+                    if (midiFiles != null)
+                    {
+                        for (File midi : midiFiles)
+                        {
+                            if (midi.getName().contains(" - "))
+                            {
+                                int index = midi.getName().lastIndexOf(" - ");
+                                String name = midi.getName().substring(index).replace(".mid", "").replace(" - ", "").trim();
 
+                                if (name.equalsIgnoreCase(currentSong))
+                                {
+                                    initMidiStream(midi, musicMaskConfig.getShuffleMode(), false);
+                                    System.out.println(name + " is playing!");
+                                }
+                            }
+
+                            if (midi.getName().replace(".mid", "").trim().equalsIgnoreCase(currentSong))
+                            {
+                                initMidiStream(midi, musicMaskConfig.getShuffleMode(), false);
+                                System.out.println(midi.getName() + " is playing!");
+                            }
+                        }
+                    }
+                }
             } catch (IOException | InvalidMidiDataException exception)
             {
                 exception.printStackTrace();
@@ -153,7 +183,7 @@ public class MusicMaskPlugin extends Plugin
         });
     }
 
-    private void initMidiStream(File midi) throws IOException, InvalidMidiDataException
+    private void initMidiStream(File midi, boolean shuffle, boolean looping) throws IOException, InvalidMidiDataException
     {
         MidiPcmStream midiPcmStream = new MidiPcmStream();
         Path path = Paths.get(midi.toURI());
@@ -165,7 +195,7 @@ public class MusicMaskPlugin extends Plugin
         midiTrack.loadMidiTrackInfo();
 
         midiPcmStream.init(9, 128);
-        midiPcmStream.setMusicTrack(midiTrack, musicMaskConfig.getLoopingMode());
+        midiPcmStream.setMusicTrack(midiTrack, looping);
         midiPcmStream.setPcmStreamVolume(musicMaskConfig.getMusicVolume());
         midiPcmStream.loadTestSoundBankCompletely(midiTrack, maskPath, musicMaskConfig.getMusicVersion().version);
 
@@ -178,7 +208,74 @@ public class MusicMaskPlugin extends Plugin
 
         while (midiPcmStream.active)
         {
-            playSound(soundPlayer);
+            if (!shuffle)
+            {
+                playSound(soundPlayer);
+            }
+
+            else
+            {
+                playSound(soundPlayer);
+
+                if (midiPcmStream.midiFile.isDone())
+                {
+                    soundPlayer.close();
+                    if (maskPath != null)
+                    {
+                        File[] midiFiles = new File(maskPath + "/MIDI/").listFiles();
+
+                        if (midiFiles != null)
+                        {
+                            File midiFile = midiFiles[(int) (midiFiles.length * Math.random())];
+                            if (midiFile.getName().contains(".mid"))
+                            {
+                                if (midiFile.getName().contains(" - "))
+                                {
+                                    int index = midiFile.getName().lastIndexOf(" - ");
+                                    String name = midiFile.getName().substring(index).replace(".mid", "").replace(" - ", "").trim();
+
+                                    if (name.equalsIgnoreCase(currentSong))
+                                    {
+                                        initMidiStream(midiFile, musicMaskConfig.getShuffleMode(), false);
+                                        System.out.println(name + " is playing!");
+                                    }
+                                }
+
+                                if (midiFile.getName().replace(".mid", "").trim().equalsIgnoreCase(currentSong))
+                                {
+                                    initMidiStream(midiFile, musicMaskConfig.getShuffleMode(), false);
+                                    System.out.println(midiFile.getName() + " is playing!");
+                                }
+                            }
+
+                            else
+                            {
+                                midiFile = midiFiles[(int) (midiFiles.length * Math.random())];
+                                if (midiFile.getName().contains(".mid"))
+                                {
+                                    if (midiFile.getName().contains(" - "))
+                                    {
+                                        int index = midiFile.getName().lastIndexOf(" - ");
+                                        String name = midiFile.getName().substring(index).replace(".mid", "").replace(" - ", "").trim();
+
+                                        if (name.equalsIgnoreCase(currentSong))
+                                        {
+                                            initMidiStream(midiFile, musicMaskConfig.getShuffleMode(), false);
+                                            System.out.println(name + " is playing!");
+                                        }
+                                    }
+
+                                    if (midiFile.getName().replace(".mid", "").trim().equalsIgnoreCase(currentSong))
+                                    {
+                                        initMidiStream(midiFile, musicMaskConfig.getShuffleMode(), false);
+                                        System.out.println(midiFile.getName() + " is playing!");
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
         }
     }
 
@@ -220,6 +317,43 @@ public class MusicMaskPlugin extends Plugin
                 fadeThread.start();
             }
         }
+
+        if (configChanged.getKey().equals("musicShuffle"))
+        {
+            if (musicMaskConfig.getShuffleMode())
+            {
+                if (maskPath != null)
+                {
+                    File[] midiFiles = new File(maskPath + "/MIDI/").listFiles();
+
+                    if (midiFiles != null)
+                    {
+                        File midiFile = midiFiles[(int) (midiFiles.length * Math.random())];
+                        if (midiFile.getName().contains(" - "))
+                        {
+                            int index = midiFile.getName().lastIndexOf(" - ");
+                            currentSong = midiFile.getName().substring(index).replace(".mid", "").replace(" - ", "").trim();
+
+                            if (songThread != null)
+                            {
+                                initFadeThread();
+                                fadeThread.start();
+                            }
+                        }
+
+                        if (!midiFile.getName().contains(" - "))
+                        {
+                            currentSong = midiFile.getName().replace(".mid", "").trim();
+                            if (songThread != null)
+                            {
+                                initFadeThread();
+                                fadeThread.start();
+                            }
+                        }
+                    }
+                }
+            }
+        }
     }
 
     @Provides
@@ -229,11 +363,29 @@ public class MusicMaskPlugin extends Plugin
     }
 
     @Subscribe
-    public void onGameTick(GameTick gameTick)
+    public void onGameTick(GameTick gameTick) throws IOException, InvalidMidiDataException
     {
-        if (!musicMaskConfig.getOverridingMusic().equals(""))
+        if (!musicMaskConfig.getShuffleMode())
         {
-            if (gameTick != null)
+            if (!musicMaskConfig.getOverridingMusic().equals(""))
+            {
+                if (gameTick != null)
+                {
+                    Widget musicPlayingWidget = client.getWidget(WidgetID.MUSIC_GROUP_ID, 6);
+                    if (musicPlayingWidget != null)
+                    {
+                        if (!musicPlayingWidget.getText().equals(currentSong))
+                        {
+                            currentSong = musicPlayingWidget.getText();
+                            if (songThread != null)
+                            {
+                                initFadeThread();
+                                fadeThread.start();
+                            }
+                        }
+                    }
+                }
+            } else
             {
                 Widget musicPlayingWidget = client.getWidget(WidgetID.MUSIC_GROUP_ID, 6);
                 if (musicPlayingWidget != null)
@@ -252,16 +404,57 @@ public class MusicMaskPlugin extends Plugin
         }
         else
         {
-            Widget musicPlayingWidget = client.getWidget(WidgetID.MUSIC_GROUP_ID, 6);
-            if (musicPlayingWidget != null)
+            if (maskPath != null)
             {
-                if (!musicPlayingWidget.getText().equals(currentSong))
+                File[] midiFiles = new File(maskPath + "/MIDI/").listFiles();
+
+                if (midiFiles != null)
                 {
-                    currentSong = musicPlayingWidget.getText();
-                    if (songThread != null)
+                    File midiFile = midiFiles[(int) (midiFiles.length * Math.random())];
+                    if (midiFile.getName().contains(".mid"))
                     {
-                        initFadeThread();
-                        fadeThread.start();
+                        if (midiFile.getName().contains(" - "))
+                        {
+                            int index = midiFile.getName().lastIndexOf(" - ");
+                            String name = midiFile.getName().substring(index).replace(".mid", "").replace(" - ", "").trim();
+
+                            if (name.equalsIgnoreCase(currentSong))
+                            {
+                                initMidiStream(midiFile, musicMaskConfig.getShuffleMode(), false);
+                                System.out.println(name + " is playing!");
+                            }
+                        }
+
+                        if (midiFile.getName().replace(".mid", "").trim().equalsIgnoreCase(currentSong))
+                        {
+                            initMidiStream(midiFile, musicMaskConfig.getShuffleMode(), false);
+                            System.out.println(midiFile.getName() + " is playing!");
+                        }
+                    }
+
+                    else
+                    {
+                        midiFile = midiFiles[(int) (midiFiles.length * Math.random())];
+                        if (midiFile.getName().contains(".mid"))
+                        {
+                            if (midiFile.getName().contains(" - "))
+                            {
+                                int index = midiFile.getName().lastIndexOf(" - ");
+                                String name = midiFile.getName().substring(index).replace(".mid", "").replace(" - ", "").trim();
+
+                                if (name.equalsIgnoreCase(currentSong))
+                                {
+                                    initMidiStream(midiFile, musicMaskConfig.getShuffleMode(), false);
+                                    System.out.println(name + " is playing!");
+                                }
+                            }
+
+                            if (midiFile.getName().replace(".mid", "").trim().equalsIgnoreCase(currentSong))
+                            {
+                                initMidiStream(midiFile, musicMaskConfig.getShuffleMode(), false);
+                                System.out.println(midiFile.getName() + " is playing!");
+                            }
+                        }
                     }
                 }
             }

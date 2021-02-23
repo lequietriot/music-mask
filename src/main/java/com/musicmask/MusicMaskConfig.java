@@ -73,14 +73,15 @@ public interface MusicMaskConfig extends Config
             name = "Loop Mode",
             description = "Set the Music Loop"
     )
-    default boolean getLoopingMode() {
-        return true;
+    default boolean getLoopingMode()
+    {
+        return false;
     }
 
     @ConfigItem(
             position = 4,
             keyName = "musicShuffle",
-            name = "Shuffle Mode (Unavailable)",
+            name = "Shuffle Mode",
             description = "Set the Music to Shuffle"
     )
     default boolean getShuffleMode() {
