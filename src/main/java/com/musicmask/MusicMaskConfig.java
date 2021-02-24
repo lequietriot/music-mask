@@ -64,7 +64,7 @@ public interface MusicMaskConfig extends Config
     )
     default int getMusicVolume()
     {
-        return 255;
+        return 256;
     }
 
     @ConfigItem(
