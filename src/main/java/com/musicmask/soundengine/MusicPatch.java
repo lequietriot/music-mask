@@ -27,6 +27,7 @@ public class MusicPatch extends AudioNode {
     public MusicPatch(int patchID) {
         createNewPatch(patchID);
     }
+
     public MusicPatch(byte[] patchData) {
         this.audioBuffers = new AudioBuffer[128];
         this.pitchOffset = new short[128];
@@ -575,14 +576,14 @@ public class MusicPatch extends AudioNode {
             audioBuffers[note] = audioBuffer;
             pitchOffset[note] = (short) ((rootKey));// * 256) - 32768);
             panOffset[note] = (byte) pan;
-            volumeOffset[note] = (byte) volume;
+            volumeOffset[note] = (byte) (volume / 1.5);
         }
 
         if (lowKeyRange == highKeyRange) {
             audioBuffers[lowKeyRange] = audioBuffer;
             pitchOffset[lowKeyRange] = (short) ((rootKey));// * 256) - 32768);
             panOffset[lowKeyRange] = (byte) pan;
-            volumeOffset[lowKeyRange] = (byte) volume;
+            volumeOffset[lowKeyRange] = (byte) (volume / 1.5);
         }
     }
 
