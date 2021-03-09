@@ -220,7 +220,7 @@ public class MidiPcmStream extends PcmStream {
                 musicPatchNode.musicPatchInfo = musicPatch.musicPatchNode2[note];
                 musicPatchNode.loopVariable = musicPatch.loopMode[note];
                 musicPatchNode.currentNotePitch = note;
-                musicPatchNode.maxVolumeLevel = velocity * velocity * musicPatch.volumeOffset[note] * musicPatch.panOffset[note] + 1024 >> 11;
+                musicPatchNode.maxVolumeLevel = velocity * velocity * musicPatch.volumeOffset[note] * musicPatch.baseVelocity + 1024 >> 11;
                 musicPatchNode.currentPanValue = musicPatch.panOffset[note] & 255;
                 musicPatchNode.frequencyCorrection = (note << 8) - (musicPatch.pitchOffset[note] & 32767);
                 musicPatchNode.field2456 = 0;
