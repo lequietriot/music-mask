@@ -33,6 +33,7 @@ public interface MusicMaskConfig extends Config
 {
     enum MusicVersion
     {
+        RETRO_GAME_BOY("GB"),
         RUNESCAPE_2("RS2"),
         RUNESCAPE_OLD_SCHOOL("OSRS"),
         RUNESCAPE_HIGH_DEFINITION("RSHD"),
