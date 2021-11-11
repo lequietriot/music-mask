@@ -46,7 +46,7 @@ import java.io.IOException;
 @PluginDescriptor(
         enabledByDefault = false,
         name = "Music Mask",
-        description = "Changes how the game music sounds",
+        description = "Allows you to customize how the game music sounds",
         tags = {"sound", "music", "custom"}
 )
 public class MusicMaskPlugin extends Plugin
@@ -61,14 +61,11 @@ public class MusicMaskPlugin extends Plugin
 
     private String currentSong;
 
-    public static long pausedPosition = 0;
-    public static boolean fading;
     public static MusicPlayer musicPlayer;
 
     @Override
     protected void startUp() throws Exception
     {
-        fading = false;
         initMusicPlayer();
 
         if (client.getGameState() == GameState.LOGGED_IN)
@@ -181,6 +178,5 @@ public class MusicMaskPlugin extends Plugin
         {
             musicPlayer.stop();
         }
-        fading = false;
     }
 }

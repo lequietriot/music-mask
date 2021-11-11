@@ -61,18 +61,12 @@ public class MusicPlayer
             }
             sequencer.setSequence(sequence);
             sequencer.setLoopCount(-1);
-
-            if (MusicMaskPlugin.pausedPosition > 0 && !newSong)
-            {
-                sequencer.setMicrosecondPosition(MusicMaskPlugin.pausedPosition);
-            }
             sequencer.start();
         }
     }
 
     public void stop()
     {
-        MusicMaskPlugin.pausedPosition = sequencer.getMicrosecondPosition();
         if (sequencer.isOpen())
         {
             sequencer.stop();
