@@ -40,9 +40,8 @@ import net.runelite.client.plugins.PluginDescriptor;
 import javax.inject.Inject;
 import javax.sound.midi.*;
 import javax.sound.sampled.LineUnavailableException;
-import java.io.FileInputStream;
+import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
 
 @PluginDescriptor(
         enabledByDefault = false,
@@ -101,28 +100,14 @@ public class MusicMaskPlugin extends Plugin
 
     private void initConfiguration() throws InvalidMidiDataException, IOException
     {
-        InputStream soundBankResource;
-        String codeName = musicMaskConfig.getSoundSet().codeName;
-        if (codeName.equals("Custom")) {
-            soundBankResource = new FileInputStream(musicMaskConfig.getCustomSoundBankPath());
-        }
-        else {
-            soundBankResource = getClass().getResourceAsStream("soundfonts/" + codeName + ".sf2/");
-        }
-
-        if (soundBankResource != null)
-        {
-            currentSoundBank = MidiSystem.getSoundbank(soundBankResource);
-        }
+        File soundBankResource = new File(musicMaskConfig.getCustomSoundBankPath());
+        currentSoundBank = MidiSystem.getSoundbank(soundBankResource);
     }
 
     private Sequence getMidiSequence(String songName) throws InvalidMidiDataException, IOException {
-        Sequence sequence = null;
-        InputStream musicResource = getClass().getResourceAsStream("music/" + songName + ".mid/");
-        if (musicResource != null)
-        {
-            sequence = MidiSystem.getSequence(musicResource);
-        }
+        Sequence sequence;
+        File musicResource = new File(musicMaskConfig.getCustomMidiMusicPath() + File.separator + songName + ".mid/");
+        sequence = MidiSystem.getSequence(musicResource);
         return sequence;
     }
 

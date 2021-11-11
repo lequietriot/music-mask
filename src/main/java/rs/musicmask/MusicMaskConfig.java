@@ -33,34 +33,32 @@ public interface MusicMaskConfig extends Config
 {
     @ConfigItem(
             position = 0,
-            keyName = "soundBank",
-            name = "SoundFont",
-            description = "Set the SoundFont version"
-    )
-    default SoundSets getSoundSet()
-    {
-        return SoundSets.RUNESCAPE_2;
-    }
-
-    @ConfigItem(
-            position = 1,
             keyName = "defaultLoginMusic",
             name = "Default Login Music",
             description = "Set the default login screen music"
     )
-    default String getDefaultLoginMusic()
-    {
+    default String getDefaultLoginMusic() {
         return "Scape Main";
     }
 
     @ConfigItem(
-            position = 2,
+            position = 1,
             keyName = "defaultCustomSoundBank",
             name = "Default Custom SoundFont Path",
             description = "Set the default custom SoundBank from a local file path"
     )
-    default String getCustomSoundBankPath()
-    {
+    default String getCustomSoundBankPath() {
         return System.getProperty("user.home") + "/Downloads/Custom.sf2";
+    }
+
+    @ConfigItem(
+            position = 2,
+            keyName = "defaultCustomMusic",
+            name = "Default MIDI Music Path",
+            description = "Set the default MIDI Music folder from a local file path"
+    )
+    default String getCustomMidiMusicPath()
+    {
+        return System.getProperty("user.home") + "/Downloads/MIDI/";
     }
 }

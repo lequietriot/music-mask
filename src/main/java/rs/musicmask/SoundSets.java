@@ -27,8 +27,6 @@ package rs.musicmask;
 public enum SoundSets
 {
     RUNESCAPE_2("RS2"),
-    //TODO: OLD_SCHOOL("OSRS"),
-    RUNESCAPE_2008("RSHD"),
     CUSTOM("Custom");
 
     public final String codeName;
