@@ -24,19 +24,15 @@
  */
 package rs.musicmask;
 
-import com.sun.media.sound.AudioSynthesizer;
-
 import javax.sound.midi.*;
 
-public class AudioSynthReceiver implements Receiver {
+public class CustomReceiver implements Receiver {
 
-    int bank;
+    public static Synthesizer customSynthesizer;
 
-    AudioSynthesizer audioSynthesizer;
-
-    public AudioSynthReceiver(AudioSynthesizer synthesizer)
+    CustomReceiver(Synthesizer synthesizer)
     {
-        audioSynthesizer = synthesizer;
+        customSynthesizer = synthesizer;
     }
 
     @Override
@@ -45,45 +41,48 @@ public class AudioSynthReceiver implements Receiver {
         if (message instanceof ShortMessage)
         {
             ShortMessage shortMessage = (ShortMessage) message;
-            int command = shortMessage.getCommand();
-            int channel = shortMessage.getChannel();
-            int data1 = shortMessage.getData1();
-            int data2 = shortMessage.getData2();
+            MidiChannel currentChannel = customSynthesizer.getChannels()[shortMessage.getChannel()];
 
-            MidiChannel midiChannel = audioSynthesizer.getChannels()[channel];
-
-            if (command == ShortMessage.CONTROL_CHANGE)
+            if (shortMessage.getCommand() == ShortMessage.PROGRAM_CHANGE)
             {
-                if (data1 == 32)
+                currentChannel.programChange(shortMessage.getData1());
+            }
+            if (shortMessage.getCommand() == ShortMessage.NOTE_OFF)
+            {
+                currentChannel.noteOff(shortMessage.getData1(), shortMessage.getData2());
+            }
+            if (shortMessage.getCommand() == ShortMessage.NOTE_ON)
+            {
+                currentChannel.noteOn(shortMessage.getData1(), shortMessage.getData2());
+            }
+            if (shortMessage.getCommand() == ShortMessage.CONTROL_CHANGE)
+            {
+                if (shortMessage.getData1() != 0 && shortMessage.getData1() != 32)
                 {
-                    bank = data2;
+                    currentChannel.controlChange(shortMessage.getData1(), shortMessage.getData2());
                 }
-                else if (data1 != 0)
+                if (shortMessage.getData1() == 32)
                 {
-                    midiChannel.controlChange(data1, data2);
+                    currentChannel.programChange(shortMessage.getData2() * 128, currentChannel.getProgram());
                 }
             }
-            if (command == ShortMessage.PROGRAM_CHANGE)
+            if (shortMessage.getCommand() == ShortMessage.POLY_PRESSURE)
             {
-                midiChannel.programChange(bank * 128, data1);
+                currentChannel.setPolyPressure(shortMessage.getData1(), shortMessage.getData2());
             }
-            else {
-                try {
-                    audioSynthesizer.getReceiver().send(message, timeStamp);
-                } catch (MidiUnavailableException e) {
-                    e.printStackTrace();
-                }
+            if (shortMessage.getCommand() == ShortMessage.CHANNEL_PRESSURE)
+            {
+                currentChannel.setChannelPressure(shortMessage.getData1());
+            }
+            if (shortMessage.getCommand() == ShortMessage.PITCH_BEND)
+            {
+                currentChannel.setPitchBend(shortMessage.getData1() + shortMessage.getData2() * 128);
             }
         }
     }
 
     @Override
-    public void close()
-    {
-        try {
-            audioSynthesizer.getReceiver().close();
-        } catch (MidiUnavailableException e) {
-            e.printStackTrace();
-        }
+    public void close() {
+        customSynthesizer.close();
     }
 }

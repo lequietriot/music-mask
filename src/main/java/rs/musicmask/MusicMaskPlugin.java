@@ -25,7 +25,6 @@
 package rs.musicmask;
 
 import com.google.inject.Provides;
-import com.sun.media.sound.AudioSynthesizer;
 import net.runelite.api.Client;
 import net.runelite.api.GameState;
 import net.runelite.api.events.GameStateChanged;
@@ -60,18 +59,11 @@ public class MusicMaskPlugin extends Plugin
     private MusicMaskConfig musicMaskConfig;
 
     private Soundbank currentSoundBank;
-    private boolean isHighQuality;
-    private String resamplerType;
-    private boolean isStereo;
-    private boolean reverb;
-    private boolean chorus;
-    private boolean autoGainControl;
 
     private String currentSong;
 
     public static long pausedPosition = 0;
     public static boolean fading;
-    public static AudioSynthesizer audioSynthesizer;
     public static MusicPlayer musicPlayer;
 
     @Override
@@ -98,7 +90,7 @@ public class MusicMaskPlugin extends Plugin
     private void initMusicPlayer() throws InvalidMidiDataException, IOException, MidiUnavailableException, LineUnavailableException {
         initConfiguration();
         musicPlayer = new MusicPlayer();
-        musicPlayer.init(currentSoundBank, isHighQuality, resamplerType, isStereo, reverb, chorus, autoGainControl);
+        musicPlayer.init(currentSoundBank);
     }
 
     @Provides
@@ -121,12 +113,6 @@ public class MusicMaskPlugin extends Plugin
         if (soundBankResource != null)
         {
             currentSoundBank = MidiSystem.getSoundbank(soundBankResource);
-            isHighQuality = musicMaskConfig.getHighQuality();
-            resamplerType = musicMaskConfig.getResamplerType().resamplerType;
-            isStereo = musicMaskConfig.getStereoMode();
-            reverb = musicMaskConfig.getReverbMode();
-            chorus = musicMaskConfig.getChorusMode();
-            autoGainControl = musicMaskConfig.getAutoGainControl();
         }
     }
 
@@ -177,17 +163,14 @@ public class MusicMaskPlugin extends Plugin
 
     private void fadeToSong(String currentSong) {
         new Thread(() -> {
-            musicPlayer.fadeOut();
-            while (!fading) {
-                try {
-                    initMusicPlayer();
-                    if (getMidiSequence(currentSong) != null) {
-                        musicPlayer.play(getMidiSequence(currentSong), true);
-                    }
-                    break;
-                } catch (InvalidMidiDataException | MidiUnavailableException | LineUnavailableException | IOException e) {
-                    e.printStackTrace();
+            musicPlayer.stop();
+            try {
+                initMusicPlayer();
+                if (getMidiSequence(currentSong) != null) {
+                    musicPlayer.play(getMidiSequence(currentSong), true);
                 }
+            } catch (InvalidMidiDataException | MidiUnavailableException | LineUnavailableException | IOException e) {
+                e.printStackTrace();
             }
         }).start();
     }
@@ -212,10 +195,6 @@ public class MusicMaskPlugin extends Plugin
         if (musicPlayer != null)
         {
             musicPlayer.stop();
-        }
-        if (audioSynthesizer != null)
-        {
-            audioSynthesizer.close();
         }
         fading = false;
     }

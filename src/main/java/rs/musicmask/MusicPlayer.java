@@ -24,84 +24,30 @@
  */
 package rs.musicmask;
 
-import com.sun.media.sound.AudioSynthesizer;
-
 import javax.sound.midi.*;
-import javax.sound.sampled.*;
-import java.util.HashMap;
-import java.util.Map;
 
 public class MusicPlayer
 {
-    public SourceDataLine sourceDataLine;
-    public DataLine.Info dataLineInfo;
     public Sequencer sequencer;
+    public CustomReceiver customReceiver;
 
-    public void init(Soundbank soundbank, boolean highQuality, String resamplerType, boolean stereo, boolean reverb, boolean chorus, boolean autoGainControl) {
+    public void init(Soundbank soundbank) {
         try {
             sequencer = MidiSystem.getSequencer(false);
             sequencer.open();
 
-            AudioFormat audioFormat;
+            CustomSynthesizer customSynthesizer = new CustomSynthesizer(MidiSystem.getSynthesizer());
+            customSynthesizer.open();
+            customSynthesizer.unloadAllInstruments(customSynthesizer.getDefaultSoundbank());
+            customSynthesizer.loadAllInstruments(soundbank);
 
-            if (highQuality) {
-                audioFormat = new AudioFormat(44100, 16, (stereo ? 2 : 1), true, false);
-            } else {
-                audioFormat = new AudioFormat(22050, 16, (stereo ? 2 : 1), true, false);
-            }
+            customReceiver = new CustomReceiver(customSynthesizer);
 
-            Map<String, Object> synthProperties = new HashMap<>();
-            synthProperties.put("Interpolation", resamplerType);
-            synthProperties.put("Control Rate", -1);
-            synthProperties.put("Format", audioFormat);
-            synthProperties.put("Latency", -1);
-            synthProperties.put("Max Polyphony", 1024);
-            synthProperties.put("Reverb", reverb);
-            synthProperties.put("Chorus", chorus);
-            synthProperties.put("Auto Gain Control", autoGainControl);
-            synthProperties.put("Large Mode", true);
+            sequencer.getTransmitter().setReceiver(customReceiver);
 
-            dataLineInfo = new DataLine.Info(SourceDataLine.class, audioFormat);
-
-            sourceDataLine = (SourceDataLine) AudioSystem.getLine(dataLineInfo);
-            sourceDataLine.open();
-            sourceDataLine.start();
-
-            MusicMaskPlugin.audioSynthesizer = (AudioSynthesizer) MidiSystem.getSynthesizer();
-            MusicMaskPlugin.audioSynthesizer.open(sourceDataLine, synthProperties);
-            MusicMaskPlugin.audioSynthesizer.unloadAllInstruments(MusicMaskPlugin.audioSynthesizer.getDefaultSoundbank());
-            MusicMaskPlugin.audioSynthesizer.loadAllInstruments(soundbank);
-
-            sequencer.getTransmitter().setReceiver(MusicMaskPlugin.audioSynthesizer.getReceiver());
-
-        } catch (MidiUnavailableException | LineUnavailableException e) {
-            e.printStackTrace();
-        }
-    }
-
-    public void fadeOut()
-    {
-        MusicMaskPlugin.fading = true;
-        FloatControl gainControl = (FloatControl) sourceDataLine.getControl(FloatControl.Type.MASTER_GAIN);
-        if (sourceDataLine.isControlSupported(gainControl.getType()))
+        } catch (MidiUnavailableException e)
         {
-            try
-            {
-                for (float gainValue = gainControl.getValue(); gainValue > gainControl.getMinimum(); gainValue--)
-                {
-                    gainControl.setValue(gainValue);
-                    Thread.sleep(50);
-                    if (gainValue <= -60.0)
-                    {
-                        stop();
-                        MusicMaskPlugin.fading = false;
-                    }
-                }
-            }
-            catch (InterruptedException e)
-            {
-                e.printStackTrace();
-            }
+            e.printStackTrace();
         }
     }
 
@@ -109,7 +55,6 @@ public class MusicPlayer
     {
         if (sequencer != null)
         {
-            byte[] XGModeOn = new byte[]{(byte) 0xF0, (byte) 0x43, (byte) 0x10, (byte) 0x4C, (byte) 0x00, (byte) 0x00, (byte) 0x7E, (byte) 0x00, (byte) 0xF7};
             if (!sequencer.isOpen())
             {
                 sequencer.open();
@@ -122,7 +67,6 @@ public class MusicPlayer
                 sequencer.setMicrosecondPosition(MusicMaskPlugin.pausedPosition);
             }
             sequencer.start();
-            sequencer.getReceiver().send(new SysexMessage(XGModeOn, XGModeOn.length), -1);
         }
     }
 
@@ -133,12 +77,6 @@ public class MusicPlayer
         {
             sequencer.stop();
             sequencer.close();
-        }
-        if (sourceDataLine.isOpen())
-        {
-            sourceDataLine.stop();
-            sourceDataLine.flush();
-            sourceDataLine.close();
         }
         try {
             if (sequencer.getReceiver() != null)
