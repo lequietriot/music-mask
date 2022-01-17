@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Rodolfo Ruiz-Velasco <https://github.com/lequietriot>
+ * Copyright (c) 2022, Rodolfo Ruiz-Velasco <https://github.com/lequietriot>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -28,11 +28,15 @@ import javax.sound.midi.*;
 
 public class CustomReceiver implements Receiver {
 
-    public static Synthesizer customSynthesizer;
+    public CustomSynthesizer customSynthesizer0;
+    public CustomSynthesizer customSynthesizer1;
 
-    CustomReceiver(Synthesizer synthesizer)
+    public boolean percussionChannel;
+
+    CustomReceiver(CustomSynthesizer synthesizer0, CustomSynthesizer synthesizer1)
     {
-        customSynthesizer = synthesizer;
+        customSynthesizer0 = synthesizer0;
+        customSynthesizer1 = synthesizer1;
     }
 
     @Override
@@ -41,8 +45,18 @@ public class CustomReceiver implements Receiver {
         if (message instanceof ShortMessage)
         {
             ShortMessage shortMessage = (ShortMessage) message;
-            MidiChannel currentChannel = customSynthesizer.getChannels()[shortMessage.getChannel()];
-
+            MidiChannel currentChannel = customSynthesizer0.getChannels()[shortMessage.getChannel()];
+            percussionChannel = false;
+            if (shortMessage.getChannel() == 9)
+            {
+                currentChannel = customSynthesizer1.getChannels()[0];
+                try {
+                    shortMessage = new ShortMessage(shortMessage.getCommand(), 0, shortMessage.getData1(), shortMessage.getData2());
+                    percussionChannel = true;
+                } catch (InvalidMidiDataException e) {
+                    e.printStackTrace();
+                }
+            }
             if (shortMessage.getCommand() == ShortMessage.PROGRAM_CHANGE)
             {
                 currentChannel.programChange(shortMessage.getData1());
@@ -64,6 +78,10 @@ public class CustomReceiver implements Receiver {
                 if (shortMessage.getData1() == 32)
                 {
                     currentChannel.programChange(shortMessage.getData2() * 128, currentChannel.getProgram());
+                    if (shortMessage.getData2() != 1)
+                    {
+                        percussionChannel = false;
+                    }
                 }
             }
             if (shortMessage.getCommand() == ShortMessage.POLY_PRESSURE)
@@ -78,11 +96,15 @@ public class CustomReceiver implements Receiver {
             {
                 currentChannel.setPitchBend(shortMessage.getData1() + shortMessage.getData2() * 128);
             }
+            if (percussionChannel)
+            {
+                currentChannel.programChange(128, currentChannel.getProgram());
+            }
         }
     }
 
     @Override
     public void close() {
-        customSynthesizer.close();
+        customSynthesizer0.close();
     }
 }

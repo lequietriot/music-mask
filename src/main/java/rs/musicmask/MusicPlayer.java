@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Rodolfo Ruiz-Velasco <https://github.com/lequietriot>
+ * Copyright (c) 2022, Rodolfo Ruiz-Velasco <https://github.com/lequietriot>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -36,12 +36,17 @@ public class MusicPlayer
             sequencer = MidiSystem.getSequencer(false);
             sequencer.open();
 
-            CustomSynthesizer customSynthesizer = new CustomSynthesizer(MidiSystem.getSynthesizer());
-            customSynthesizer.open();
-            customSynthesizer.unloadAllInstruments(customSynthesizer.getDefaultSoundbank());
-            customSynthesizer.loadAllInstruments(soundbank);
+            CustomSynthesizer customSynthesizer0 = new CustomSynthesizer(MidiSystem.getSynthesizer());
+            customSynthesizer0.open();
+            customSynthesizer0.unloadAllInstruments(customSynthesizer0.getDefaultSoundbank());
+            customSynthesizer0.loadAllInstruments(soundbank);
 
-            customReceiver = new CustomReceiver(customSynthesizer);
+            CustomSynthesizer customSynthesizer1 = new CustomSynthesizer(MidiSystem.getSynthesizer());
+            customSynthesizer1.open();
+            customSynthesizer1.unloadAllInstruments(customSynthesizer1.getDefaultSoundbank());
+            customSynthesizer1.loadAllInstruments(soundbank);
+
+            customReceiver = new CustomReceiver(customSynthesizer0, customSynthesizer1);
 
             sequencer.getTransmitter().setReceiver(customReceiver);
 
@@ -51,7 +56,7 @@ public class MusicPlayer
         }
     }
 
-    public void play(Sequence sequence, boolean newSong) throws InvalidMidiDataException, MidiUnavailableException
+    public void play(Sequence sequence) throws InvalidMidiDataException, MidiUnavailableException
     {
         if (sequencer != null)
         {

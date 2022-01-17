@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Rodolfo Ruiz-Velasco <https://github.com/lequietriot>
+ * Copyright (c) 2022, Rodolfo Ruiz-Velasco <https://github.com/lequietriot>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,6 +31,14 @@ import net.runelite.api.events.GameStateChanged;
 import net.runelite.api.events.GameTick;
 import net.runelite.api.widgets.Widget;
 import net.runelite.api.widgets.WidgetID;
+import net.runelite.api.widgets.WidgetInfo;
+import net.runelite.cache.IndexType;
+import net.runelite.cache.definitions.TrackDefinition;
+import net.runelite.cache.definitions.loaders.TrackLoader;
+import net.runelite.cache.fs.Archive;
+import net.runelite.cache.fs.Index;
+import net.runelite.cache.fs.Storage;
+import net.runelite.cache.fs.Store;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.eventbus.Subscribe;
 import net.runelite.client.events.ConfigChanged;
@@ -40,6 +48,8 @@ import net.runelite.client.plugins.PluginDescriptor;
 import javax.inject.Inject;
 import javax.sound.midi.*;
 import javax.sound.sampled.LineUnavailableException;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 
@@ -68,18 +78,20 @@ public class MusicMaskPlugin extends Plugin
     {
         initMusicPlayer();
 
-        if (client.getGameState() == GameState.LOGGED_IN)
+        if (client.getWidget(WidgetInfo.MUSIC_WINDOW) != null)
         {
             Widget musicPlayingWidget = client.getWidget(WidgetID.MUSIC_GROUP_ID, 6);
 
             if (musicPlayingWidget != null)
             {
                 currentSong = musicPlayingWidget.getText();
+                musicPlayer.play(getMidiSequence(musicMaskConfig.getDefaultLoginMusic()));
             }
         }
         else
         {
             currentSong = musicMaskConfig.getDefaultLoginMusic();
+            musicPlayer.play(getMidiSequence(musicMaskConfig.getDefaultLoginMusic()));
         }
     }
 
@@ -102,15 +114,46 @@ public class MusicMaskPlugin extends Plugin
     }
 
     private Sequence getMidiSequence(String songName) throws InvalidMidiDataException, IOException {
-        Sequence sequence;
-        File musicResource = new File(musicMaskConfig.getCustomMidiMusicPath() + File.separator + songName + ".mid/");
-        sequence = MidiSystem.getSequence(musicResource);
-        return sequence;
+        ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+        byte[] midiData = getSongID(songName);
+        ByteArrayInputStream byteArrayInputStream = new ByteArrayInputStream(midiData);
+        MidiSystem.write(MidiSystem.getSequence(byteArrayInputStream), 1, byteArrayOutputStream);
+
+        return MidiSystem.getSequence(new ByteArrayInputStream(byteArrayOutputStream.toByteArray()));
+    }
+
+    public byte[] getSongID(String songName)
+    {
+        try (Store store = new Store(new File(System.getProperty("user.home") + File.separator + "jagexcache" + File.separator + "oldschool" + File.separator + "LIVE")))
+        {
+            store.load();
+
+            Storage storage = store.getStorage();
+            Index index = store.getIndex(IndexType.TRACK1);
+
+            MusicTrackMapping musicTrackID = new MusicTrackMapping();
+            if (musicTrackID.musicTracks.get(songName) != null) {
+                int archiveID = musicTrackID.musicTracks.get(songName);
+                Archive archive = index.getArchive(archiveID);
+                {
+                    byte[] contents = archive.decompress(storage.loadArchive(archive));
+
+                    if (contents != null) {
+                        TrackLoader loader = new TrackLoader();
+                        TrackDefinition def = loader.load(contents);
+                        return def.midi;
+                    }
+                }
+            }
+        } catch (IOException e)
+        {
+            e.printStackTrace();
+        }
+        return null;
     }
 
     @Subscribe
-    public void onGameStateChanged(GameStateChanged gameStateChanged) throws InvalidMidiDataException, IOException, MidiUnavailableException, LineUnavailableException
-    {
+    public void onGameStateChanged(GameStateChanged gameStateChanged) throws InvalidMidiDataException, IOException, MidiUnavailableException {
         if (client.getGameState() == GameState.LOGGED_IN)
         {
             musicPlayer.stop();
@@ -119,7 +162,7 @@ public class MusicMaskPlugin extends Plugin
         if (client.getGameState() == GameState.LOGIN_SCREEN)
         {
             currentSong = musicMaskConfig.getDefaultLoginMusic();
-            musicPlayer.play(getMidiSequence(musicMaskConfig.getDefaultLoginMusic()), true);
+            musicPlayer.play(getMidiSequence(musicMaskConfig.getDefaultLoginMusic()));
         }
     }
 
@@ -130,7 +173,7 @@ public class MusicMaskPlugin extends Plugin
                 musicPlayer.stop();
                 initMusicPlayer();
                 if (getMidiSequence(currentSong) != null) {
-                    musicPlayer.play(getMidiSequence(currentSong), false);
+                    musicPlayer.play(getMidiSequence(currentSong));
                 }
             }
             if (configChanged.getKey().equals("defaultLoginMusic")) {
@@ -149,7 +192,7 @@ public class MusicMaskPlugin extends Plugin
             try {
                 initMusicPlayer();
                 if (getMidiSequence(currentSong) != null) {
-                    musicPlayer.play(getMidiSequence(currentSong), true);
+                    musicPlayer.play(getMidiSequence(currentSong));
                 }
             } catch (InvalidMidiDataException | MidiUnavailableException | LineUnavailableException | IOException e) {
                 e.printStackTrace();

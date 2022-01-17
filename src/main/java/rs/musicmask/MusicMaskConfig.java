@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Rodolfo Ruiz-Velasco <https://github.com/lequietriot>
+ * Copyright (c) 2022, Rodolfo Ruiz-Velasco <https://github.com/lequietriot>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -38,7 +38,7 @@ public interface MusicMaskConfig extends Config
             description = "Set the default login screen music"
     )
     default String getDefaultLoginMusic() {
-        return "Scape Main";
+        return "Login Screen";
     }
 
     @ConfigItem(
@@ -49,16 +49,5 @@ public interface MusicMaskConfig extends Config
     )
     default String getCustomSoundBankPath() {
         return System.getProperty("user.home") + "/Downloads/Custom.sf2";
-    }
-
-    @ConfigItem(
-            position = 2,
-            keyName = "defaultCustomMusic",
-            name = "Default MIDI Music Path",
-            description = "Set the default MIDI Music folder from a local file path"
-    )
-    default String getCustomMidiMusicPath()
-    {
-        return System.getProperty("user.home") + "/Downloads/MIDI/";
     }
 }

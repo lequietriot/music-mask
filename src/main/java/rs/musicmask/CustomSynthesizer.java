@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Rodolfo Ruiz-Velasco <https://github.com/lequietriot>
+ * Copyright (c) 2022, Rodolfo Ruiz-Velasco <https://github.com/lequietriot>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -37,7 +37,7 @@ public class CustomSynthesizer implements Synthesizer
 
     @Override
     public int getMaxPolyphony() {
-        return 1024;
+        return 8192;
     }
 
     @Override

@@ -10,16 +10,19 @@ repositories {
 	mavenCentral()
 }
 
-def runeLiteVersion = '1.8.2'
+def runeLiteVersion = '1.8.9'
 
 dependencies {
+	implementation 'io.github.llxxbb:TaskLoader:0.2.5'
 	compileOnly group: 'net.runelite', name:'client', version: runeLiteVersion
+	compileOnly group: 'net.runelite', name:'cache', version: runeLiteVersion
 
 	compileOnly 'org.projectlombok:lombok:1.18.20'
 	annotationProcessor 'org.projectlombok:lombok:1.18.20'
 
 	testImplementation 'junit:junit:4.12'
 	testImplementation group: 'net.runelite', name:'client', version: runeLiteVersion
+	testImplementation group: 'net.runelite', name:'cache', version: runeLiteVersion
 	testImplementation group: 'net.runelite', name:'jshell', version: runeLiteVersion
 }
 
