@@ -28,15 +28,11 @@ import javax.sound.midi.*;
 
 public class CustomReceiver implements Receiver {
 
-    public CustomSynthesizer customSynthesizer0;
-    public CustomSynthesizer customSynthesizer1;
+    public CustomSynthesizer[] customSynthesizers;
 
-    public boolean percussionChannel;
-
-    CustomReceiver(CustomSynthesizer synthesizer0, CustomSynthesizer synthesizer1)
+    CustomReceiver(CustomSynthesizer[] synthesizers)
     {
-        customSynthesizer0 = synthesizer0;
-        customSynthesizer1 = synthesizer1;
+        customSynthesizers = synthesizers;
     }
 
     @Override
@@ -45,66 +41,99 @@ public class CustomReceiver implements Receiver {
         if (message instanceof ShortMessage)
         {
             ShortMessage shortMessage = (ShortMessage) message;
-            MidiChannel currentChannel = customSynthesizer0.getChannels()[shortMessage.getChannel()];
-            percussionChannel = false;
+            MidiChannel currentChannel;
             if (shortMessage.getChannel() == 9)
             {
-                currentChannel = customSynthesizer1.getChannels()[0];
+                currentChannel = customSynthesizers[shortMessage.getChannel()].getChannels()[0];
                 try {
                     shortMessage = new ShortMessage(shortMessage.getCommand(), 0, shortMessage.getData1(), shortMessage.getData2());
-                    percussionChannel = true;
+                    if (shortMessage.getCommand() == ShortMessage.PROGRAM_CHANGE)
+                    {
+                        currentChannel.programChange(shortMessage.getData1());
+                    }
+                    if (shortMessage.getCommand() == ShortMessage.NOTE_OFF)
+                    {
+                        currentChannel.noteOff(shortMessage.getData1(), shortMessage.getData2());
+                    }
+                    if (shortMessage.getCommand() == ShortMessage.NOTE_ON)
+                    {
+                        currentChannel.noteOn(shortMessage.getData1(), shortMessage.getData2());
+                    }
+                    if (shortMessage.getCommand() == ShortMessage.CONTROL_CHANGE)
+                    {
+                        if (shortMessage.getData1() != 0 && shortMessage.getData1() != 32)
+                        {
+                            currentChannel.programChange(128, currentChannel.getProgram());
+                            currentChannel.controlChange(shortMessage.getData1(), shortMessage.getData2());
+                        }
+                        if (shortMessage.getData1() == 32)
+                        {
+                            currentChannel.programChange(shortMessage.getData2() * 128, currentChannel.getProgram());
+                        }
+                    }
+                    if (shortMessage.getCommand() == ShortMessage.POLY_PRESSURE)
+                    {
+                        currentChannel.setPolyPressure(shortMessage.getData1(), shortMessage.getData2());
+                    }
+                    if (shortMessage.getCommand() == ShortMessage.CHANNEL_PRESSURE)
+                    {
+                        currentChannel.setChannelPressure(shortMessage.getData1());
+                    }
+                    if (shortMessage.getCommand() == ShortMessage.PITCH_BEND)
+                    {
+                        currentChannel.setPitchBend(shortMessage.getData1() + shortMessage.getData2() * 128);
+                    }
                 } catch (InvalidMidiDataException e) {
                     e.printStackTrace();
                 }
             }
-            if (shortMessage.getCommand() == ShortMessage.PROGRAM_CHANGE)
+            else
             {
-                currentChannel.programChange(shortMessage.getData1());
-            }
-            if (shortMessage.getCommand() == ShortMessage.NOTE_OFF)
-            {
-                currentChannel.noteOff(shortMessage.getData1(), shortMessage.getData2());
-            }
-            if (shortMessage.getCommand() == ShortMessage.NOTE_ON)
-            {
-                currentChannel.noteOn(shortMessage.getData1(), shortMessage.getData2());
-            }
-            if (shortMessage.getCommand() == ShortMessage.CONTROL_CHANGE)
-            {
-                if (shortMessage.getData1() != 0 && shortMessage.getData1() != 32)
+                currentChannel = customSynthesizers[shortMessage.getChannel()].getChannels()[shortMessage.getChannel()];
+                if (shortMessage.getCommand() == ShortMessage.PROGRAM_CHANGE)
                 {
-                    currentChannel.controlChange(shortMessage.getData1(), shortMessage.getData2());
+                    currentChannel.programChange(shortMessage.getData1());
                 }
-                if (shortMessage.getData1() == 32)
+                if (shortMessage.getCommand() == ShortMessage.NOTE_OFF)
                 {
-                    currentChannel.programChange(shortMessage.getData2() * 128, currentChannel.getProgram());
-                    if (shortMessage.getData2() != 1)
+                    currentChannel.noteOff(shortMessage.getData1(), shortMessage.getData2());
+                }
+                if (shortMessage.getCommand() == ShortMessage.NOTE_ON)
+                {
+                    currentChannel.noteOn(shortMessage.getData1(), shortMessage.getData2());
+                }
+                if (shortMessage.getCommand() == ShortMessage.CONTROL_CHANGE)
+                {
+                    if (shortMessage.getData1() != 0 && shortMessage.getData1() != 32)
                     {
-                        percussionChannel = false;
+                        currentChannel.controlChange(shortMessage.getData1(), shortMessage.getData2());
+                    }
+                    if (shortMessage.getData1() == 32)
+                    {
+                        currentChannel.programChange(shortMessage.getData2() * 128, currentChannel.getProgram());
                     }
                 }
-            }
-            if (shortMessage.getCommand() == ShortMessage.POLY_PRESSURE)
-            {
-                currentChannel.setPolyPressure(shortMessage.getData1(), shortMessage.getData2());
-            }
-            if (shortMessage.getCommand() == ShortMessage.CHANNEL_PRESSURE)
-            {
-                currentChannel.setChannelPressure(shortMessage.getData1());
-            }
-            if (shortMessage.getCommand() == ShortMessage.PITCH_BEND)
-            {
-                currentChannel.setPitchBend(shortMessage.getData1() + shortMessage.getData2() * 128);
-            }
-            if (percussionChannel)
-            {
-                currentChannel.programChange(128, currentChannel.getProgram());
+                if (shortMessage.getCommand() == ShortMessage.POLY_PRESSURE)
+                {
+                    currentChannel.setPolyPressure(shortMessage.getData1(), shortMessage.getData2());
+                }
+                if (shortMessage.getCommand() == ShortMessage.CHANNEL_PRESSURE)
+                {
+                    currentChannel.setChannelPressure(shortMessage.getData1());
+                }
+                if (shortMessage.getCommand() == ShortMessage.PITCH_BEND)
+                {
+                    currentChannel.setPitchBend(shortMessage.getData1() + shortMessage.getData2() * 128);
+                }
             }
         }
     }
 
     @Override
     public void close() {
-        customSynthesizer0.close();
+        for (CustomSynthesizer customSynthesizer : customSynthesizers)
+        {
+            customSynthesizer.close();
+        }
     }
 }

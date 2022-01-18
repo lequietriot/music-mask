@@ -37,7 +37,7 @@ public class CustomSynthesizer implements Synthesizer
 
     @Override
     public int getMaxPolyphony() {
-        return 8192;
+        return 256;
     }
 
     @Override

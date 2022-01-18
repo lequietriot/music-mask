@@ -32,7 +32,6 @@ public final class MusicTrackMapping {
 
     MusicTrackMapping() {
         musicTracks.put("Login Screen", 0);
-
         musicTracks.put("Iban", 1);
         musicTracks.put("Moody", 10);
         musicTracks.put("Beyond", 100);

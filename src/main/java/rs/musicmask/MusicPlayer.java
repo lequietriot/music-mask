@@ -36,17 +36,16 @@ public class MusicPlayer
             sequencer = MidiSystem.getSequencer(false);
             sequencer.open();
 
-            CustomSynthesizer customSynthesizer0 = new CustomSynthesizer(MidiSystem.getSynthesizer());
-            customSynthesizer0.open();
-            customSynthesizer0.unloadAllInstruments(customSynthesizer0.getDefaultSoundbank());
-            customSynthesizer0.loadAllInstruments(soundbank);
+            CustomSynthesizer[] customSynthesizers = new CustomSynthesizer[16];
+            for (int index = 0; index < customSynthesizers.length; index++)
+            {
+                customSynthesizers[index] = new CustomSynthesizer(MidiSystem.getSynthesizer());
+                customSynthesizers[index].open();
+                customSynthesizers[index].unloadAllInstruments(customSynthesizers[index].getDefaultSoundbank());
+                customSynthesizers[index].loadAllInstruments(soundbank);
+            }
 
-            CustomSynthesizer customSynthesizer1 = new CustomSynthesizer(MidiSystem.getSynthesizer());
-            customSynthesizer1.open();
-            customSynthesizer1.unloadAllInstruments(customSynthesizer1.getDefaultSoundbank());
-            customSynthesizer1.loadAllInstruments(soundbank);
-
-            customReceiver = new CustomReceiver(customSynthesizer0, customSynthesizer1);
+            customReceiver = new CustomReceiver(customSynthesizers);
 
             sequencer.getTransmitter().setReceiver(customReceiver);
 
