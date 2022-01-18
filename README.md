@@ -1,7 +1,7 @@
 # MusicMask Plugin
 A plugin for RuneLite that allows you to play higher quality music over the Old School RuneScape game.
 
-##Downloadable SoundFonts
+## Downloadable SoundFonts
 Some SoundFonts, compatible with the Old School RuneScape SoundBank format, can be downloaded from the RuneScape MIDI Music Archive on Google Drive, found here: https://drive.google.com/drive/folders/1Dl3Q1kNx7ouYcDLJhqAUCZxd4ZliShM2?usp=sharing
 
 ## How to use (with the RuneLite Plugin Hub):
@@ -25,7 +25,7 @@ By default, Old School RuneScape uses MIDI CC #32 (Bank Select LSB) to choose di
 Drum Kits. Each bank can store up to 128 instruments, but Old School RuneScape does not fill every instrument slot.
 Below is a list of every instrument currently in Old School RuneScape as of the Theatre of Blood update:
 
-###Bank 0
+### Bank 0
 - 0 = Acoustic Grand Piano
 - 1 = Bright Acoustic Piano
 - 2 = Electric Grand Piano
@@ -155,7 +155,7 @@ Below is a list of every instrument currently in Old School RuneScape as of the 
 - 126 = Applause
 - 127 = Gunshot
 
-###Bank 1
+### Bank 1
 - 0 = Standard Drum Kit
 - 8 = Room Drum Kit
 - 16 = Power Drum Kit
@@ -166,7 +166,7 @@ Below is a list of every instrument currently in Old School RuneScape as of the 
 - 56 = Special FX Drum Kit
 - 127 = Standard Drum Kit
 
-###Bank 2
+### Bank 2
 - 0 = Choir Ohhs (Transposed down 1 octave, or 12 notes)
 - 1 = Opera Voice Oh, Staccato (Transposed down 2 octaves, or 24 notes)
 - 2 = Opera Voice Oh, Sustained (Transposed down 3 octaves, or 36 notes)
