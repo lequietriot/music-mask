@@ -32,13 +32,6 @@ import net.runelite.api.events.GameTick;
 import net.runelite.api.widgets.Widget;
 import net.runelite.api.widgets.WidgetID;
 import net.runelite.api.widgets.WidgetInfo;
-import net.runelite.cache.IndexType;
-import net.runelite.cache.definitions.TrackDefinition;
-import net.runelite.cache.definitions.loaders.TrackLoader;
-import net.runelite.cache.fs.Archive;
-import net.runelite.cache.fs.Index;
-import net.runelite.cache.fs.Storage;
-import net.runelite.cache.fs.Store;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.eventbus.Subscribe;
 import net.runelite.client.events.ConfigChanged;
@@ -124,30 +117,18 @@ public class MusicMaskPlugin extends Plugin
 
     public byte[] getSongID(String songName)
     {
-        try (Store store = new Store(new File(System.getProperty("user.home") + File.separator + "jagexcache" + File.separator + "oldschool" + File.separator + "LIVE")))
-        {
-            store.load();
+        MusicTrackMapping musicTrackID = new MusicTrackMapping();
+        if (musicTrackID.musicTracks.get(songName) != null) {
+            int archiveID = musicTrackID.musicTracks.get(songName);
+            {
+                byte[] contents = client.getIndex(6).loadData(archiveID, 0);
 
-            Storage storage = store.getStorage();
-            Index index = store.getIndex(IndexType.TRACK1);
-
-            MusicTrackMapping musicTrackID = new MusicTrackMapping();
-            if (musicTrackID.musicTracks.get(songName) != null) {
-                int archiveID = musicTrackID.musicTracks.get(songName);
-                Archive archive = index.getArchive(archiveID);
-                {
-                    byte[] contents = archive.decompress(storage.loadArchive(archive));
-
-                    if (contents != null) {
-                        TrackLoader loader = new TrackLoader();
-                        TrackDefinition def = loader.load(contents);
-                        return def.midi;
-                    }
+                if (contents != null) {
+                    TrackLoader loader = new TrackLoader();
+                    TrackDefinition def = loader.load(contents);
+                    return def.midi;
                 }
             }
-        } catch (IOException e)
-        {
-            e.printStackTrace();
         }
         return null;
     }
