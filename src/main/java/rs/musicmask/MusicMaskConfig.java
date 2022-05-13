@@ -27,27 +27,31 @@ package rs.musicmask;
 import net.runelite.client.config.Config;
 import net.runelite.client.config.ConfigGroup;
 import net.runelite.client.config.ConfigItem;
+import net.runelite.client.config.Range;
 
 @ConfigGroup("musicMask")
 public interface MusicMaskConfig extends Config
 {
+    @Range(
+            max = 400
+    )
     @ConfigItem(
             position = 0,
-            keyName = "defaultLoginMusic",
-            name = "Default Login Music",
-            description = "Set the default login screen music"
+            keyName = "setVolume",
+            name = "Set the music volume",
+            description = "Sets the custom music volume"
     )
-    default String getDefaultLoginMusic() {
-        return "Login Screen";
+    default int getMusicVolume() {
+        return 200;
     }
-
     @ConfigItem(
             position = 1,
-            keyName = "defaultCustomSoundBank",
+            keyName = "setSoundFont",
             name = "Default Custom SoundFont Path",
             description = "Set the default custom SoundBank from a local file path"
     )
     default String getCustomSoundBankPath() {
         return System.getProperty("user.home") + "/Downloads/Custom.sf2";
     }
+
 }

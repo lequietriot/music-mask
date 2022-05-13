@@ -1,5 +1,5 @@
 # MusicMask Plugin
-A plugin for RuneLite that allows you to play higher quality music over the Old School RuneScape game.
+A plugin for RuneLite that allows you to play higher quality music over the Old School RuneScape game. This project makes use of the synthesizer developed by IBM Research which was distributed with the BSD 2-Clause "Simplified" License, found here: https://github.com/bome/java-wavetable-synth
 
 ## Downloadable SoundFonts
 Some SoundFonts, compatible with the Old School RuneScape SoundBank format, can be downloaded from the RuneScape MIDI Music Archive on Google Drive, found here: https://drive.google.com/drive/folders/1Dl3Q1kNx7ouYcDLJhqAUCZxd4ZliShM2?usp=sharing
@@ -155,14 +155,16 @@ Below is a list of every instrument currently in Old School RuneScape as of the 
 - 126 = Applause
 - 127 = Gunshot
 
-### Bank 1
+### Bank 1 (Percussion)
 - 0 = Standard Drum Kit
+- 1 = Gongs
 - 8 = Room Drum Kit
 - 16 = Power Drum Kit
 - 24 = Electronic Drum Kit
 - 25 = Analog Drum Kit
 - 40 = Brush Drum Kit
 - 48 = Orchestral Drum Kit
+- 50 = Ethnic Drum Kit
 - 56 = Special FX Drum Kit
 - 127 = Standard Drum Kit
 
@@ -170,3 +172,4 @@ Below is a list of every instrument currently in Old School RuneScape as of the 
 - 0 = Choir Ohhs (Transposed down 1 octave, or 12 notes)
 - 1 = Opera Voice Oh, Staccato (Transposed down 2 octaves, or 24 notes)
 - 2 = Opera Voice Oh, Sustained (Transposed down 3 octaves, or 36 notes)
+- 3 = Choir Aahs
