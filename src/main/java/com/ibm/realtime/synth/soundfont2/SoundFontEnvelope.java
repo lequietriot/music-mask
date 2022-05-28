@@ -26,10 +26,10 @@
 package com.ibm.realtime.synth.soundfont2;
 
 import com.ibm.realtime.synth.engine.AudioTime;
+import lombok.extern.slf4j.Slf4j;
 
 import static com.ibm.realtime.synth.soundfont2.SoundFontUtils.DEFAULT_ARTICULATION_DELAY;
 import static com.ibm.realtime.synth.soundfont2.SoundFontUtils.timecents2seconds;
-import static com.ibm.realtime.synth.utils.Debug.*;
 
 /**
  * The envelope generator for SoundFont voices.
@@ -37,6 +37,7 @@ import static com.ibm.realtime.synth.utils.Debug.*;
  * @author florian
  *
  */
+@Slf4j
 public class SoundFontEnvelope {
 
 	public static boolean DEBUG_EG = false;
@@ -245,7 +246,7 @@ public class SoundFontEnvelope {
 			if (segValue < MIN_RELEASE_TIME) {
 				segValue = MIN_RELEASE_TIME;
 				if (DEBUG_EG) {
-					debug(name + ": lengthened RELEASE segment to prevent click.");
+					log.debug(name + ": lengthened RELEASE segment to prevent click.");
 				}
 			}
 		}
@@ -279,13 +280,13 @@ public class SoundFontEnvelope {
 		if (segment == SUSTAIN && segmentValue[SUSTAIN] >= 1.0) {
 			segment = RELEASE + 1;
 			if (DEBUG_EG) {
-				debug(name + ": at time " + format3(newStartTime)
+				log.debug(name + ": at time " + (newStartTime)
 						+ "s: decay to 0, envelope finished.");
 			}
 			return;
 		} else if (segment > RELEASE) {
 			if (DEBUG_EG) {
-				debug(name + ": at time " + format3(newStartTime)
+				log.debug(name + ": at time " + (newStartTime)
 						+ "s: finished.");
 			}
 			return;
@@ -294,12 +295,12 @@ public class SoundFontEnvelope {
 		nextSegmentStartTime =
 				segmentStartTime + getEffectiveSegmentTime(segment);
 		if (DEBUG_EG) {
-			debug(name + " at time " + format3(newStartTime) + "s: value="
-					+ format3(value) + ", start of segment "
+			log.debug(name + " at time " + (newStartTime) + "s: value="
+					+ (value) + ", start of segment "
 					+ segment2string(segment) + " at "
-					+ format3(segmentStartTime) + "s until "
-					+ format3(nextSegmentStartTime) + "s (length="
-					+ format3(nextSegmentStartTime - segmentStartTime) + "s)");
+					+ (segmentStartTime) + "s until "
+					+ (nextSegmentStartTime) + "s (length="
+					+ (nextSegmentStartTime - segmentStartTime) + "s)");
 		}
 	}
 
@@ -346,15 +347,15 @@ public class SoundFontEnvelope {
 		if (relative) {
 			this.segmentValue[seg] *= seconds;
 			if (DEBUG_EG) {
-				debug(" " + name + ": add " + timecents + " cents (="
-						+ format3(seconds) + "s), new " + segment2string(seg)
-						+ ": " + format3(segmentValue[seg]) + "s");
+				log.debug(" " + name + ": add " + timecents + " cents (="
+						+ (seconds) + "s), new " + segment2string(seg)
+						+ ": " + (segmentValue[seg]) + "s");
 			}
 		} else {
 			this.segmentValue[seg] = seconds;
 			if (DEBUG_EG) {
-				debug(" " + name + ": set " + segment2string(seg) + " to "
-						+ format3(segmentValue[seg]) + "s");
+				log.debug(" " + name + ": set " + segment2string(seg) + " to "
+						+ (segmentValue[seg]) + "s");
 			}
 		}
 	}
@@ -401,11 +402,11 @@ public class SoundFontEnvelope {
 		this.segmentValue[SUSTAIN] = level;
 		if (DEBUG_EG) {
 			if (volume != 0.0) {
-				debug(" " + name + ": set sustain to "
-						+ format3((1.0 - level) * 100.0) + "dB");
+				log.debug(" " + name + ": set sustain to "
+						+ ((1.0 - level) * 100.0) + "dB");
 			} else {
-				debug(" " + name + ": set sustain to "
-						+ format3((1.0 - level) * 100.0) + "%");
+				log.debug(" " + name + ": set sustain to "
+						+ ((1.0 - level) * 100.0) + "%");
 			}
 		}
 	}
@@ -419,10 +420,10 @@ public class SoundFontEnvelope {
 		if (DEBUG_EG) {
 			// display absolute value
 			if (volume != 0.0) {
-				debugNoNewLine(" " + name + ": add " + format3(level * 100.0)
+				log.debug(" " + name + ": add " + (level * 100.0)
 						+ "dB to sustain: ");
 			} else {
-				debugNoNewLine(" " + name + ": add " + format3(level * 100.0)
+				log.debug(" " + name + ": add " + (level * 100.0)
 						+ "% to sustain: ");
 			}
 		}
@@ -444,7 +445,7 @@ public class SoundFontEnvelope {
 	void setCutoff(double cutoff) {
 		this.cutoff = cutoff;
 		if (DEBUG_EG) {
-			debug(" " + name + ": set cutoff to " + format3(this.cutoff)
+			log.debug(" " + name + ": set cutoff to " + (this.cutoff)
 					+ " semitones");
 		}
 	}
@@ -455,8 +456,8 @@ public class SoundFontEnvelope {
 	void addCutoff(double cutoff) {
 		this.cutoff += cutoff;
 		if (DEBUG_EG) {
-			debug(" " + name + ": add cutoff by " + format3(cutoff)
-					+ ", new value: " + format3(this.cutoff) + " semitones");
+			log.debug(" " + name + ": add cutoff by " + (cutoff)
+					+ ", new value: " + (this.cutoff) + " semitones");
 		}
 	}
 
@@ -475,7 +476,7 @@ public class SoundFontEnvelope {
 	void setPitch(double pitch) {
 		this.pitch = pitch;
 		if (DEBUG_EG) {
-			debug(" " + name + ": set pitch to " + format3(this.pitch)
+			log.debug(" " + name + ": set pitch to " + (this.pitch)
 					+ " semitones");
 		}
 	}
@@ -486,8 +487,8 @@ public class SoundFontEnvelope {
 	void addPitch(double pitch) {
 		this.pitch += pitch;
 		if (DEBUG_EG) {
-			debug(" " + name + ": add pitch by " + format3(pitch)
-					+ ", new value: " + format3(this.pitch) + " semitones");
+			log.debug(" " + name + ": add pitch by " + (pitch)
+					+ ", new value: " + (this.pitch) + " semitones");
 		}
 	}
 
@@ -515,8 +516,8 @@ public class SoundFontEnvelope {
 	void setVolume(double volume) {
 		this.volume = volume;
 		if (DEBUG_EG) {
-			debug(" " + name + ": set maximum attenuation to "
-					+ format3(this.volume) + "dB");
+			log.debug(" " + name + ": set maximum attenuation to "
+					+ (this.volume) + "dB");
 		}
 	}
 
@@ -560,19 +561,19 @@ public class SoundFontEnvelope {
 	// DEBUGGING
 
 	public String toString() {
-		return name + ": pitch=" + format3(this.pitch) + " semitones, vol="
-				+ format3(this.volume) + "dB, cutoff=" + format3(this.cutoff)
+		return name + ": pitch=" + (this.pitch) + " semitones, vol="
+				+ (this.volume) + "dB, cutoff=" + (this.cutoff)
 				+ " semitones," + " key2hold="
-				+ format3(timecents2seconds(keyNumToHoldTimeCents * 12))
+				+ (timecents2seconds(keyNumToHoldTimeCents * 12))
 				+ " key2decay="
-				+ format3(timecents2seconds(keyNumToDecayTimeCents * 12))
-				+ " dl=" + format3(segmentValue[DELAY]) + " a="
-				+ format3(segmentValue[ATTACK]) + " h="
-				+ format3(segmentValue[HOLD]) + " (eff.h="
-				+ format3(getEffectiveSegmentTime(HOLD)) + ") dc="
-				+ format3(segmentValue[DECAY]) + " (eff.dc="
-				+ format3(getEffectiveSegmentTime(DECAY)) + ") s="
-				+ format3((1.0 - segmentValue[SUSTAIN]) * 100.0) + "% r="
-				+ format3(segmentValue[RELEASE]);
+				+ (timecents2seconds(keyNumToDecayTimeCents * 12))
+				+ " dl=" + (segmentValue[DELAY]) + " a="
+				+ (segmentValue[ATTACK]) + " h="
+				+ (segmentValue[HOLD]) + " (eff.h="
+				+ (getEffectiveSegmentTime(HOLD)) + ") dc="
+				+ (segmentValue[DECAY]) + " (eff.dc="
+				+ (getEffectiveSegmentTime(DECAY)) + ") s="
+				+ ((1.0 - segmentValue[SUSTAIN]) * 100.0) + "% r="
+				+ (segmentValue[RELEASE]);
 	}
 }

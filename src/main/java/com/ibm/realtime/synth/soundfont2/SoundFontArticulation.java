@@ -27,8 +27,7 @@ package com.ibm.realtime.synth.soundfont2;
 
 import com.ibm.realtime.synth.engine.*;
 import com.ibm.realtime.synth.utils.AudioUtils;
-
-import static com.ibm.realtime.synth.utils.Debug.*;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * The master class for all articulation (runtime parameters) of a playing
@@ -36,6 +35,7 @@ import static com.ibm.realtime.synth.utils.Debug.*;
  * 
  * @author florian
  */
+@Slf4j
 public class SoundFontArticulation extends Articulation {
 
 	public static boolean DEBUG_ART_VOLUME = false;
@@ -204,12 +204,12 @@ public class SoundFontArticulation extends Articulation {
 		calcLFO_EG_VolumeFactor();
 
 		if (DEBUG_ART) {
-			debug(name + "initial pitch offset=" + (getInitialPitchOffset()+fineTune)
+			log.debug(name + "initial pitch offset=" + (getInitialPitchOffset()+fineTune)
 					+ " semitones.");
-			debug(lfo1.toString());
-			debug(lfo2.toString());
-			debug(eg1.toString());
-			debug(eg2.toString());
+			log.debug(lfo1.toString());
+			log.debug(lfo2.toString());
+			log.debug(eg1.toString());
+			log.debug(eg2.toString());
 		}
 	}
 
@@ -264,12 +264,12 @@ public class SoundFontArticulation extends Articulation {
 			linearVolume *=
 					SoundFontUtils.attenuation2linear(initialAttenuation);
 			if (DEBUG_ART_VOLUME) {
-				debug(" "
+				log.debug(" "
 						+ name
 						+ "push initial attenuation to linear factor: was="
-						+ format3(initialAttenuation)
+						+ (initialAttenuation)
 						+ "dB -> factor="
-						+ format3(SoundFontUtils.attenuation2linear(initialAttenuation) * 100)
+						+ (SoundFontUtils.attenuation2linear(initialAttenuation) * 100)
 						+ "%");
 			}
 			initialAttenuation = 0.0;
@@ -327,10 +327,10 @@ public class SoundFontArticulation extends Articulation {
 		if (newLFO_EG_VolumeFactor != LFO_EG_VolumeFactor) {
 			if (DEBUG_ART_VOLUME) {
 				double dB = eg1.getCurrentVolume();
-				debug(eg1.name + ": value="
-						+ format3(eg1.getCurrentValue() * 100) + "%, vol="
-						+ format3(dB) + "dB -> "
-						+ format3(AudioUtils.decibel2linear(dB) * 100.0) + "%");
+				log.debug(eg1.name + ": value="
+						+ (eg1.getCurrentValue() * 100) + "%, vol="
+						+ (dB) + "dB -> "
+						+ (AudioUtils.decibel2linear(dB) * 100.0) + "%");
 			}
 			LFO_EG_VolumeFactor = newLFO_EG_VolumeFactor;
 			calcEffectiveVolumeFactor();
@@ -345,16 +345,16 @@ public class SoundFontArticulation extends Articulation {
 				initialVolumeFactor[1] * runtimeVolumeFactor[1]
 						* LFO_EG_VolumeFactor;
 		if (DEBUG_ART_VOLUME) {
-			debug(name + "new volume factors: " + " effective factor: " + "L="
-					+ format1(effectiveLinearVolume[0] * 100) + "% " + "R="
-					+ format1(effectiveLinearVolume[1] * 100) + "%. "
+			log.debug(name + "new volume factors: " + " effective factor: " + "L="
+					+ (effectiveLinearVolume[0] * 100) + "% " + "R="
+					+ (effectiveLinearVolume[1] * 100) + "%. "
 					+ "initial: " + "L="
-					+ format1(initialVolumeFactor[0] * 100) + "% " + "R="
-					+ format1(initialVolumeFactor[1] * 100) + "% "
+					+ (initialVolumeFactor[0] * 100) + "% " + "R="
+					+ (initialVolumeFactor[1] * 100) + "% "
 					+ "runtime: " + "L="
-					+ format1(runtimeVolumeFactor[0] * 100) + "% " + "R="
-					+ format1(runtimeVolumeFactor[1] * 100) + "% " + "LFO/EG: "
-					+ format1(LFO_EG_VolumeFactor * 100) + "% ");
+					+ (runtimeVolumeFactor[0] * 100) + "% " + "R="
+					+ (runtimeVolumeFactor[1] * 100) + "% " + "LFO/EG: "
+					+ (LFO_EG_VolumeFactor * 100) + "% ");
 		}
 	}
 
@@ -365,7 +365,7 @@ public class SoundFontArticulation extends Articulation {
 	public void setFineTune(double fineTune) {
 		this.fineTune = fineTune;
 		if (DEBUG_ART) {
-			debug(" " + name + "set fine tune to " + format3(fineTune)
+			log.debug(" " + name + "set fine tune to " + (fineTune)
 					+ " semitones");
 		}
 	}
@@ -376,7 +376,7 @@ public class SoundFontArticulation extends Articulation {
 	 */
 	public void addFineTune(double value) {
 		if (DEBUG_ART) {
-			debugNoNewLine(" " + name + "add " + format3(value)
+			log.debug(" " + name + "add " + (value)
 					+ "semitones to fine tune:");
 		}
 		setFineTune(fineTune+value);
@@ -389,7 +389,7 @@ public class SoundFontArticulation extends Articulation {
 	public void setCoarseTune(double coarseTune) {
 		setInitialPitchOffset(coarseTune);
 		if (DEBUG_ART) {
-			debug(" " + name + "set coarse tune to " + format3(getInitialPitchOffset())
+			log.debug(" " + name + "set coarse tune to " + (getInitialPitchOffset())
 					+ " semitones");
 		}
 	}
@@ -400,7 +400,7 @@ public class SoundFontArticulation extends Articulation {
 	 */
 	public void addCoarseTune(double value) {
 		if (DEBUG_ART) {
-			debugNoNewLine(" " + name + "add " + format3(value)
+			log.debug(" " + name + "add " + (value)
 					+ "semitones to coarse tune:");
 		}
 		setCoarseTune(getInitialPitchOffset()+value);
@@ -421,7 +421,7 @@ public class SoundFontArticulation extends Articulation {
 	public void setLinearPan(double linearPan) {
 		this.linearPan = linearPan;
 		if (DEBUG_ART) {
-			debug(" " + name + "set pan to " + format3(linearPan * 100)
+			log.debug(" " + name + "set pan to " + (linearPan * 100)
 					+ "% (scale -100..0..+100)");
 		}
 	}
@@ -433,7 +433,7 @@ public class SoundFontArticulation extends Articulation {
 	 */
 	public void addLinearPan(double value) {
 		if (DEBUG_ART) {
-			debugNoNewLine(" " + name + "add " + format3(value * 100)
+			log.debug(" " + name + "add " + (value * 100)
 					+ "% to pan. ");
 		}
 		setLinearPan(linearPan + value);
@@ -450,7 +450,7 @@ public class SoundFontArticulation extends Articulation {
 	public void setInitialAttenuation(double decibel) {
 		initialAttenuation = decibel;
 		if (DEBUG_ART) {
-			debug(" " + name + "set initial attenuation to " + format1(decibel)
+			log.debug(" " + name + "set initial attenuation to " + (decibel)
 					+ "dB");
 		}
 	}
@@ -465,7 +465,7 @@ public class SoundFontArticulation extends Articulation {
 	 */
 	public void addInitialAttenuation(double decibel) {
 		if (DEBUG_ART) {
-			debugNoNewLine(" " + name + "add " + format1(decibel) + "dB:");
+			log.debug(" " + name + "add " + (decibel) + "dB:");
 		}
 		setInitialAttenuation(initialAttenuation + decibel);
 	}
@@ -477,7 +477,7 @@ public class SoundFontArticulation extends Articulation {
 	 */
 	public void addLinearInitialAttenuation(double factor) {
 		if (DEBUG_ART) {
-			debug(" " + name + "add " + format1(factor * 100)
+			log.debug(" " + name + "add " + (factor * 100)
 					+ "% to initial volume factor.");
 		}
 		linearVolume *= factor;
@@ -579,7 +579,7 @@ public class SoundFontArticulation extends Articulation {
 		}
 		chorusSend = value;
 		if (DEBUG_ART) {
-			debug(" " + name + "set Chorus send to " + format1(value * 100)
+			log.debug(" " + name + "set Chorus send to " + (value * 100)
 					+ "%");
 		}
 	}
@@ -591,7 +591,7 @@ public class SoundFontArticulation extends Articulation {
 	 */
 	public void addChorusSend(double value) {
 		if (DEBUG_ART) {
-			debugNoNewLine(" " + name + "add " + format1(value * 100.0)
+			log.debug(" " + name + "add " + (value * 100.0)
 					+ "% to Chorus send:");
 		}
 		setChorusSend(value + chorusSend);
@@ -610,7 +610,7 @@ public class SoundFontArticulation extends Articulation {
 		}
 		reverbSend = value;
 		if (DEBUG_ART) {
-			debug(" " + name + "set Reverb send to " + format1(value * 100)
+			log.debug(" " + name + "set Reverb send to " + (value * 100)
 					+ "%");
 		}
 	}
@@ -622,7 +622,7 @@ public class SoundFontArticulation extends Articulation {
 	 */
 	public void addReverbSend(double value) {
 		if (DEBUG_ART) {
-			debugNoNewLine(" " + name + "add " + format1(value * 100.0)
+			log.debug(" " + name + "add " + (value * 100.0)
 					+ "% to Reverb send:");
 		}
 		setReverbSend(value + reverbSend);
@@ -636,7 +636,7 @@ public class SoundFontArticulation extends Articulation {
 	public void setScaleTuning(double value) {
 		scaleTuning = value;
 		if (DEBUG_ART) {
-			debug(" " + name + "set scale tuning to " + format3(value)
+			log.debug(" " + name + "set scale tuning to " + (value)
 					+ " semitones.");
 		}
 	}
@@ -648,7 +648,7 @@ public class SoundFontArticulation extends Articulation {
 	 */
 	public void addScaleTuning(double value) {
 		if (DEBUG_ART) {
-			debugNoNewLine(" " + name + "add " + format3(value)
+			log.debug(" " + name + "add " + (value)
 					+ " semitones to scale tuning:");
 		}
 		setScaleTuning(scaleTuning + value);

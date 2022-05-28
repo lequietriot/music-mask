@@ -25,15 +25,15 @@
  */
 package com.ibm.realtime.synth.utils;
 
+import lombok.extern.slf4j.Slf4j;
+
 import java.util.Queue;
 import java.util.concurrent.PriorityBlockingQueue;
-
-import static com.ibm.realtime.synth.utils.Debug.debug;
-import static com.ibm.realtime.synth.utils.Debug.error;
 
 /**
  * A thread to execute the listener asynchronously.
  */
+@Slf4j
 public class AsynchExec<T> implements Runnable {
 
 	public static boolean DEBUG_ASYNCH_EXEC = false;
@@ -75,7 +75,7 @@ public class AsynchExec<T> implements Runnable {
 			try {
 				thread.join();
 			} catch (InterruptedException ie) {
-				error(ie);
+				log.debug(String.valueOf(ie));
 			}
 		}
 		thread = null;
@@ -98,7 +98,7 @@ public class AsynchExec<T> implements Runnable {
 
 	public void run() {
 		if (DEBUG_ASYNCH_EXEC) {
-			debug(name+": start.");
+			log.debug(name+": start.");
 		}
 		try {
 			while (!stopped) {
@@ -115,10 +115,7 @@ public class AsynchExec<T> implements Runnable {
 				}
 			}
 		} catch (InterruptedException ie) {
-			error(ie);
-		}
-		if (DEBUG_ASYNCH_EXEC) {
-			debug(name+": exit.");
+			log.debug(String.valueOf(ie));
 		}
 	}
 	

@@ -27,22 +27,21 @@ package com.ibm.realtime.synth.test;
 
 import com.ibm.realtime.synth.engine.MidiEvent;
 import com.ibm.realtime.synth.engine.Synthesizer;
+import lombok.extern.slf4j.Slf4j;
 
 import javax.sound.midi.MidiSystem;
 import javax.sound.midi.Sequence;
 import javax.sound.midi.Track;
 import java.io.ByteArrayInputStream;
-import java.io.File;
-
-import static com.ibm.realtime.synth.utils.Debug.debug;
-import static com.ibm.realtime.synth.utils.Debug.format3;
 
 /**
  * Load a MIDI file and push its events directly to a synthesizer's queue.
  * 
  * @author florian
  */
+@Slf4j
 public class SMFPusher {
+	
 	private final static boolean DEBUG_SMF_PUSHER = false;
 
 	/**
@@ -55,9 +54,9 @@ public class SMFPusher {
 	public void open(byte[] file) throws Exception {
 		sequence = MidiSystem.getSequence(new ByteArrayInputStream(file));
 		if (DEBUG_SMF_PUSHER) {
-			debug("Got MIDI sequence with " + sequence.getTracks().length
+			log.debug("Got MIDI sequence with " + sequence.getTracks().length
 					+ " tracks. Duration: "
-					+ format3(sequence.getMicrosecondLength() / 1000000.0)
+					+ (sequence.getMicrosecondLength() / 1000000.0)
 					+ " seconds.");
 		}
 	}
@@ -71,7 +70,7 @@ public class SMFPusher {
 	 */
 	public int pushToSynth(Synthesizer synth) {
 		if (DEBUG_SMF_PUSHER) {
-			debug("Pushing the MIDI file to the synth...");
+			log.debug("Pushing the MIDI file to the synth...");
 		}
 		durationSeconds = 0.0;
 		int events = 0;
@@ -108,7 +107,7 @@ public class SMFPusher {
 			}
 		}
 		if (DEBUG_SMF_PUSHER) {
-			debug("...done: scheduled "+events+" Note On events to synth.");
+			log.debug("...done: scheduled "+events+" Note On events to synth.");
 		}
 		return events;
 	}

@@ -30,18 +30,18 @@ import com.ibm.realtime.synth.engine.AudioBuffer;
 import com.ibm.realtime.synth.engine.AudioSink;
 import com.ibm.realtime.synth.engine.AudioTime;
 import com.ibm.realtime.synth.utils.AudioUtils;
+import lombok.extern.slf4j.Slf4j;
 
 import javax.sound.sampled.*;
 import java.util.ArrayList;
 import java.util.List;
-
-import static com.ibm.realtime.synth.utils.Debug.*;
 
 /**
  * An AudioSink that writes to a Java Sound SourceDataLine.
  * 
  * @author florian
  */
+@Slf4j
 public class JavaSoundSink implements AudioSink, AdjustableAudioClock {
 
 	public static boolean DEBUG_SINK = false;
@@ -110,15 +110,15 @@ public class JavaSoundSink implements AudioSink, AdjustableAudioClock {
 			throw new Exception("illegal audio device index: " + devIndex);
 		}
 		if (devIndex < 0) {
-			if (DEBUG_SINK) debugNoNewLine("Opening default soundcard...");
+			if (DEBUG_SINK) log.debug("Opening default soundcard...");
 			devName = "(default)";
 			sdl = AudioSystem.getSourceDataLine(format);
-			if (DEBUG_SINK) debug(sdl.getClass().getName());
+			if (DEBUG_SINK) log.debug(sdl.getClass().getName());
 		} else {
 			Mixer.Info info = devList.get(devIndex);
 			devName = info.getName();
 			if (DEBUG_SINK) {
-				debug("Opening audio out device: " + devName + " ("
+				log.debug("Opening audio out device: " + devName + " ("
 						+ info.getDescription() + ")");
 			}
 			sdl = AudioSystem.getSourceDataLine(format, info);
@@ -127,12 +127,12 @@ public class JavaSoundSink implements AudioSink, AdjustableAudioClock {
 
 		sampleRate = (double) format.getSampleRate();
 		if (DEBUG_SINK) {
-			debug("Buffer size = "
+			log.debug("Buffer size = "
 					+ sdl.getBufferSize()
 					+ " bytes = "
 					+ (sdl.getBufferSize() / format.getFrameSize())
 					+ " samples = "
-					+ format2(AudioUtils.samples2micros(sdl.getBufferSize()
+					+ (AudioUtils.samples2micros(sdl.getBufferSize()
 							/ format.getFrameSize(), format.getSampleRate()) / 1000.0)
 					+ " millis");
 		}
@@ -143,7 +143,7 @@ public class JavaSoundSink implements AudioSink, AdjustableAudioClock {
 		if (sdl != null) {
 			sdl.close();
 		}
-		if (DEBUG_SINK) debug("closed soundcard: "+devName);
+		if (DEBUG_SINK) log.debug("closed soundcard: "+devName);
 	}
 
 	public boolean isOpen() {
@@ -165,7 +165,7 @@ public class JavaSoundSink implements AudioSink, AdjustableAudioClock {
 
 	private static void setupAudioDevices() {
 		if (devList == null) {
-			if (DEBUG_SINK) debugNoNewLine("Gathering Audio devices...");
+			if (DEBUG_SINK) log.debug("Gathering Audio devices...");
 			devList = new ArrayList<Mixer.Info>();
 			Mixer.Info[] infos = AudioSystem.getMixerInfo();
 			// go through all audio devices and see if they provide input
@@ -183,7 +183,7 @@ public class JavaSoundSink implements AudioSink, AdjustableAudioClock {
 				}
 			}
 			if (DEBUG_SINK) {
-				debug("done (" + devList.size() + " devices available).");
+				log.debug("done (" + devList.size() + " devices available).");
 			}
 		}
 	}

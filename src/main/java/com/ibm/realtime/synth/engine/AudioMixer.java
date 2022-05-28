@@ -25,12 +25,14 @@
  */
 package com.ibm.realtime.synth.engine;
 
+import lombok.extern.slf4j.Slf4j;
+
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 
-import static com.ibm.realtime.synth.utils.Debug.debug;
+
 
 /**
  * An object that takes an arbitrary number of input audio streams and renders
@@ -38,6 +40,7 @@ import static com.ibm.realtime.synth.utils.Debug.debug;
  * 
  * @author florian
  */
+@Slf4j
 public class AudioMixer implements AudioInput, Serviceable {
 
 	public static boolean DEBUG_MIXER = false;
@@ -117,7 +120,7 @@ public class AudioMixer implements AudioInput, Serviceable {
 				if (ai.done()) {
 					it.remove();
 					if (DEBUG_MIXER) {
-						debug("Mixer.cleanUp: removed audio stream -- now "
+						log.debug("Mixer.cleanUp: removed audio stream -- now "
 								+ streams.size() + "streams.");
 					}
 				}
@@ -137,7 +140,7 @@ public class AudioMixer implements AudioInput, Serviceable {
 			streams.add(stream);
 		}
 		if (DEBUG_MIXER) {
-			debug("Mixer: added audio stream -- now " + streams.size()
+			log.debug("Mixer: added audio stream -- now " + streams.size()
 					+ "streams.");
 		}
 	}
@@ -154,7 +157,7 @@ public class AudioMixer implements AudioInput, Serviceable {
 			streams.remove(stream);
 		}
 		if (DEBUG_MIXER) {
-			debug("Mixer: removed audio stream -- now " + streams.size()
+			log.debug("Mixer: removed audio stream -- now " + streams.size()
 					+ "streams.");
 		}
 	}
@@ -164,7 +167,7 @@ public class AudioMixer implements AudioInput, Serviceable {
 	 */
 	public void clear() {
 		if (DEBUG_MIXER) {
-			debug("Mixer: removing all "+streams.size()+" audio streams.");
+			log.debug("Mixer: removing all "+streams.size()+" audio streams.");
 		}
 		synchronized (streams) {
 			streams.clear();

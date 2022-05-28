@@ -28,18 +28,17 @@ package com.ibm.realtime.synth.modules;
 import com.ibm.realtime.synth.engine.AudioBuffer;
 import com.ibm.realtime.synth.engine.AudioSink;
 import com.ibm.realtime.synth.engine.AudioTime;
+import lombok.extern.slf4j.Slf4j;
 
 import javax.sound.sampled.AudioFormat;
 import java.io.*;
-
-import static com.ibm.realtime.synth.utils.Debug.debug;
-import static com.ibm.realtime.synth.utils.Debug.error;
 
 /**
  * An AudioSink implementation that writes its output to a file on disk.
  * 
  * @author florian
  */
+@Slf4j
 public class DiskWriterSink implements AudioSink {
 
 	private static boolean DEBUG_WAVESINK = false;
@@ -119,7 +118,7 @@ public class DiskWriterSink implements AudioSink {
 		output.write(header);
 		open = true;
 		if (DEBUG_WAVESINK) {
-			debug("DiskWriterSink: opened output file " + file);
+			log.debug("DiskWriterSink: opened output file " + file);
 		}
 	}
 
@@ -134,18 +133,18 @@ public class DiskWriterSink implements AudioSink {
 				try {
 					ra.write(header);
 					if (DEBUG_WAVESINK) {
-						debug("DiskWriterSink: patched WAVE header");
+						log.debug("DiskWriterSink: patched WAVE header");
 					}
 				} finally {
 					ra.close();
 				}
 			}
 		} catch (IOException ioe) {
-			error(ioe);
+			log.debug(String.valueOf(ioe));
 		}
 		open = false;
 		if (DEBUG_WAVESINK) {
-			debug("DiskWriterSink: closed output file, wrote "
+			log.debug("DiskWriterSink: closed output file, wrote "
 					+ (writtenBytes / format.getFrameSize()) + " samples");
 		}
 	}
@@ -205,10 +204,10 @@ public class DiskWriterSink implements AudioSink {
 				output.write(byteBuffer, 0, requiredSize);
 				writtenBytes += requiredSize;
 				if (DEBUG_WAVESINK) {
-					debug("WaveSink: Wrote "+requiredSize+" bytes -> "+(requiredSize / getFormat().getFrameSize())+" samples");
+					log.debug("WaveSink: Wrote "+requiredSize+" bytes -> "+(requiredSize / getFormat().getFrameSize())+" samples");
 				}
 			} catch (IOException ioe) {
-				error(ioe);
+				log.debug(String.valueOf(ioe));
 			}
 		}
 	}

@@ -23,6 +23,8 @@
 
 package com.ibm.realtime.synth.soundfont2;
 
+import lombok.extern.slf4j.Slf4j;
+
 import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
@@ -30,8 +32,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-import static com.ibm.realtime.synth.utils.Debug.DEBUG_MASTER_SWITCH;
-import static com.ibm.realtime.synth.utils.Debug.debug;
 
 /**
  * Class to parse a SoundFont 2 file.
@@ -39,6 +39,7 @@ import static com.ibm.realtime.synth.utils.Debug.debug;
  * @author florian
  * 
  */
+@Slf4j
 public class Parser {
 
 	public static boolean TRACE = false;
@@ -163,13 +164,13 @@ public class Parser {
 		banks = null;
 		this.inputStream = in;
 		tempData = new PresetTempData();
-		if (TRACE) debug("Parsing...");
+		if (TRACE) log.debug("Parsing...");
 		readChunks(0xFFFFFFFFFFFFFFFL, FOURCC_OUTERCHUNK);
 		in.close();
-		if (TRACE) debug("Processing...");
+		if (TRACE) log.debug("Processing...");
 		tempData.process();
 		tempData = null;
-		if (TRACE) debug("end parsing soundfont.");
+		if (TRACE) log.debug("end parsing soundfont.");
 	}
 
 	/**
@@ -431,7 +432,7 @@ public class Parser {
 		long endPos = readPos + outerChunkLength;
 		while (readPos < endPos) {
 			if (TRACE_RIFF_MORE) {
-				debug("readPos=0x" + Long.toHexString(readPos) + " endPos=0x"
+				log.debug("readPos=0x" + Long.toHexString(readPos) + " endPos=0x"
 						+ Long.toHexString(endPos));
 			}
 			// commit skipped bytes
@@ -448,7 +449,7 @@ public class Parser {
 			}
 			long chunkStart = readPos;
 			if (TRACE_RIFF)
-				debug("offset 0x"
+				log.debug("offset 0x"
 						+ Long.toHexString(chunkStart - 8)
 						+ "("
 						+ key2string(listChunk)
@@ -474,15 +475,15 @@ public class Parser {
 				// soundfonts only have LIST chunks on 1st level
 				requireChunk(thisChunk, FOURCC_LIST);
 				int listType = readIntBE();
-				if (TRACE_RIFF) debug("\t\tLIST type " + key2string(listType));
+				if (TRACE_RIFF) log.debug("\t\tLIST type " + key2string(listType));
 				switch (listType) {
 				case FOURCC_INFO:
 					if (infoData != null) {
-						debug("Ignored repeated INFO chunk");
+						log.debug("Ignored repeated INFO chunk");
 					} else if (banks != null) {
-						debug("Ignored INFO chunk after pdta chunk");
+						log.debug("Ignored INFO chunk after pdta chunk");
 					} else if (sampleData != null) {
-						debug("Ignored INFO chunk after sdta chunk");
+						log.debug("Ignored INFO chunk after sdta chunk");
 					} else {
 						readChunks(chunkLength - 4, listType);
 						// consistency check
@@ -497,7 +498,7 @@ public class Parser {
 										"corrupt soundfont: missing version "
 												+ "information (iver chunk)");
 							}
-							debug(" -weak conformance: missing version, assuming 2.0");
+							log.debug(" -weak conformance: missing version, assuming 2.0");
 							infoData.setVersion(2, 0);
 						}
 						// compatibility check
@@ -516,9 +517,9 @@ public class Parser {
 								"illegal sdta chunk before INFO chunk");
 					}
 					if (banks != null) {
-						debug("Ignored sdta chunk after pdta chunk");
+						log.debug("Ignored sdta chunk after pdta chunk");
 					} else if (sampleData != null) {
-						debug("Ignored repeated sdta chunk");
+						log.debug("Ignored repeated sdta chunk");
 					} else {
 						readChunks(chunkLength - 4, listType);
 					}
@@ -529,7 +530,7 @@ public class Parser {
 								"illegal pdta chunk before sdta chunk");
 					}
 					if (banks != null) {
-						debug("Ignored repeated pdta chunk");
+						log.debug("Ignored repeated pdta chunk");
 					} else {
 						readChunks(chunkLength - 4, listType);
 						// consistency check
@@ -541,11 +542,9 @@ public class Parser {
 					}
 					break;
 				default:
-					if (DEBUG_MASTER_SWITCH) {
-						debug("Ignored list chunk " + key2string(listType));
-						// only for debugging
-						readChunks(chunkLength - 4, FOURCC_IGNORED);
-					}
+					log.debug("Ignored list chunk " + key2string(listType));
+					// only for debugging
+					readChunks(chunkLength - 4, FOURCC_IGNORED);
 					break;
 				}
 
@@ -561,7 +560,7 @@ public class Parser {
 				break;
 			case FOURCC_IGNORED:
 				// only for debugging purposes
-				debug("Ignored LIST element: " + key2string(thisChunk)
+				log.debug("Ignored LIST element: " + key2string(thisChunk)
 						+ " with size " + chunkLength + " bytes");
 				break;
 			default:
@@ -632,7 +631,7 @@ public class Parser {
 			checkSize(chunkID, chunkLength, 4, 1, 1);
 			infoData.setVersion(readShortLE(), readShortLE());
 			if (TRACE) {
-				debug(" read version " + infoData.getVersionMajor() + "."
+				log.debug(" read version " + infoData.getVersionMajor() + "."
 						+ infoData.getVersionMinor());
 			}
 			break;
@@ -640,24 +639,24 @@ public class Parser {
 		case FOURCC_isng:
 			infoData.setSoundEngine(readString(chunkLength));
 			if (TRACE_INFO)
-				debug(" read sound engine: " + infoData.getSoundEngine());
+				log.debug(" read sound engine: " + infoData.getSoundEngine());
 			break;
 
 		case FOURCC_INAM:
 			infoData.setName(readString(chunkLength));
-			if (TRACE) debug(" read soundfont name: " + infoData.getName());
+			if (TRACE) log.debug(" read soundfont name: " + infoData.getName());
 			break;
 
 		case FOURCC_irom:
 			infoData.setRomName(readString(chunkLength));
-			if (TRACE_INFO) debug(" read ROM name: " + infoData.getRomName());
+			if (TRACE_INFO) log.debug(" read ROM name: " + infoData.getRomName());
 			break;
 
 		case FOURCC_iver:
 			checkSize(chunkID, chunkLength, 4, 1, 1);
 			infoData.setROMVersion(readShortLE(), readShortLE());
 			if (TRACE_INFO) {
-				debug(" read ROM version " + infoData.getROMVersionMajor()
+				log.debug(" read ROM version " + infoData.getROMVersionMajor()
 						+ "." + infoData.getROMVersionMinor());
 			}
 			break;
@@ -665,39 +664,39 @@ public class Parser {
 		case FOURCC_ICRD:
 			infoData.setCreationDate(readString(chunkLength));
 			if (TRACE_INFO)
-				debug(" read creation date name: " + infoData.getCreationDate());
+				log.debug(" read creation date name: " + infoData.getCreationDate());
 			break;
 
 		case FOURCC_IENG:
 			infoData.setEngineer(readString(chunkLength));
 			if (TRACE_INFO)
-				debug(" read engineer name: " + infoData.getEngineer());
+				log.debug(" read engineer name: " + infoData.getEngineer());
 			break;
 
 		case FOURCC_IPRD:
 			infoData.setProduct(readString(chunkLength));
 			if (TRACE_INFO)
-				debug(" read product name: " + infoData.getProduct());
+				log.debug(" read product name: " + infoData.getProduct());
 			break;
 
 		case FOURCC_ICOP:
 			infoData.setCopyright(readString(chunkLength));
 			if (TRACE_INFO)
-				debug(" read copyright: " + infoData.getCopyright());
+				log.debug(" read copyright: " + infoData.getCopyright());
 			break;
 
 		case FOURCC_ICMT:
 			infoData.setComment(readString(chunkLength));
-			if (TRACE_INFO) debug(" read comment: " + infoData.getComment());
+			if (TRACE_INFO) log.debug(" read comment: " + infoData.getComment());
 			break;
 
 		case FOURCC_ISFT:
 			infoData.setSoftware(readString(chunkLength));
 			if (TRACE_INFO)
-				debug(" read software package: " + infoData.getSoftware());
+				log.debug(" read software package: " + infoData.getSoftware());
 			break;
 		default:
-			debug(" ignored INFO element " + key2string(chunkID)
+			log.debug(" ignored INFO element " + key2string(chunkID)
 					+ " with size " + chunkLength + " bytes");
 		}
 
@@ -720,10 +719,10 @@ public class Parser {
 			byte[] data = new byte[(int) chunkLength];
 			readFully(data);
 			sampleData.setData(data);
-			if (TRACE) debug(" read " + chunkLength + " bytes of audio data");
+			if (TRACE) log.debug(" read " + chunkLength + " bytes of audio data");
 			break;
 		default:
-			debug("ignored sdta element " + key2string(chunkID) + " with size "
+			log.debug("ignored sdta element " + key2string(chunkID) + " with size "
 					+ chunkLength + " bytes");
 		}
 	}
@@ -801,7 +800,7 @@ public class Parser {
 			break;
 
 		default:
-			debug("ignored pdta element " + key2string(chunkID) + " with size "
+			log.debug("ignored pdta element " + key2string(chunkID) + " with size "
 					+ chunkLength + " bytes");
 		}
 	}
@@ -902,13 +901,13 @@ public class Parser {
 					presetData[i] = presetObject;
 					addPresetToBanks(presetObject, bank, preset);
 					if (TRACE_PRESET) {
-						debug(" Read preset " + i + ": " + name + " program="
+						log.debug(" Read preset " + i + ": " + name + " program="
 								+ preset + " bank=" + bank);
 					}
 				}
 			}
 			if (!TRACE_PRESET && TRACE) {
-				debug(" read " + (blockCount - 1) + " preset definitions.");
+				log.debug(" read " + (blockCount - 1) + " preset definitions.");
 			}
 		}
 
@@ -928,7 +927,7 @@ public class Parser {
 				presetModulatorIndexes[i] = readWordLE();
 			}
 			if (TRACE_PRESET) {
-				debug(" read " + (blockCount - 1)
+				log.debug(" read " + (blockCount - 1)
 						+ " preset generator indexes and modulator indexes");
 			}
 		}
@@ -949,7 +948,7 @@ public class Parser {
 			// skip the terminating modulator
 			skip(10);
 			if (TRACE_PRESET) {
-				debug(" read " + (blockCount - 1) + " preset modulators");
+				log.debug(" read " + (blockCount - 1) + " preset modulators");
 			}
 		}
 
@@ -969,7 +968,7 @@ public class Parser {
 			// skip the terminating generator
 			skip(4);
 			if (TRACE_PRESET) {
-				debug(" read " + (blockCount - 1) + " preset generators");
+				log.debug(" read " + (blockCount - 1) + " preset generators");
 			}
 		}
 
@@ -992,12 +991,12 @@ public class Parser {
 				if (i < blockCount - 1) {
 					instData[i] = new SoundFontInstrument(name);
 					if (TRACE_PRESET) {
-						debug(" read inst " + i + ": " + name);
+						log.debug(" read inst " + i + ": " + name);
 					}
 				}
 			}
 			if (!TRACE_PRESET && TRACE) {
-				debug(" read " + (blockCount - 1) + " instruments.");
+				log.debug(" read " + (blockCount - 1) + " instruments.");
 			}
 		}
 
@@ -1016,7 +1015,7 @@ public class Parser {
 				instModulatorIndexes[i] = readWordLE();
 			}
 			if (TRACE_PRESET) {
-				debug(" read " + (blockCount - 1)
+				log.debug(" read " + (blockCount - 1)
 						+ " instrument generator indexes and modulator indexes");
 			}
 		}
@@ -1037,7 +1036,7 @@ public class Parser {
 			// skip the terminating modulator
 			skip(10);
 			if (TRACE_PRESET) {
-				debug(" read " + (blockCount - 1) + " instrument modulators");
+				log.debug(" read " + (blockCount - 1) + " instrument modulators");
 			}
 		}
 
@@ -1057,7 +1056,7 @@ public class Parser {
 			// skip the terminating generator
 			skip(4);
 			if (TRACE_PRESET) {
-				debug(" read " + (blockCount - 1) + " instrument generators");
+				log.debug(" read " + (blockCount - 1) + " instrument generators");
 			}
 		}
 
@@ -1068,7 +1067,7 @@ public class Parser {
 			for (int i = 0; i < blockCount - 1; i++) {
 				sample = readSampleHeader();
 				samples[i] = sample;
-				if (TRACE_PRESET) debug(" read " + i + ": " + sample);
+				if (TRACE_PRESET) log.debug(" read " + i + ": " + sample);
 				if ((sample.getSampleType() & (SoundFontSample.LINKED_SAMPLE | SoundFontSample.ROM_SAMPLE_FLAG)) != 0) {
 					throw new SoundFont2ParserException(
 							"unsupported soundfont: linked samples and ROM samples not supported");
@@ -1082,7 +1081,7 @@ public class Parser {
 			// skip the terminating generator
 			skip(46);
 			if (!TRACE_PRESET && TRACE) {
-				debug(" read " + (blockCount - 1) + " sample headers");
+				log.debug(" read " + (blockCount - 1) + " sample headers");
 			}
 		}
 
@@ -1091,7 +1090,7 @@ public class Parser {
 		 * classes.
 		 */
 		private void process() throws SoundFont2ParserException {
-			if (TRACE) debug(" |creating preset zones...");
+			if (TRACE) log.debug(" |creating preset zones...");
 			// IDEA: remove the global zones by flattening their generators and
 			// modulators into the zones' generators and modulators arrays. This
 			// will remove the need for the extended effort to prevent
@@ -1104,7 +1103,7 @@ public class Parser {
 				SoundFontPresetZone[] zones = new SoundFontPresetZone[nextZone
 						- zoneStart];
 				if (TRACE_PROCESSOR) {
-					debug("  preset " + i + ": " + presetData[i] + " with "
+					log.debug("  preset " + i + ": " + presetData[i] + " with "
 							+ zones.length + " zones.");
 				}
 				for (int z = zoneStart; z < nextZone; z++) {
@@ -1136,16 +1135,16 @@ public class Parser {
 					zones[z - zoneStart] = new SoundFontPresetZone(gens, mods,
 							inst);
 					if (TRACE_PROCESSOR) {
-						debug("   preset zone " + z + ": "
+						log.debug("   preset zone " + z + ": "
 								+ zones[z - zoneStart]);
 						if (TRACE_GENERATORS) {
 							for (int g = 0; g < gens.length; g++) {
-								debug("    -" + gens[g]);
+								log.debug("    -" + gens[g]);
 							}
 						}
 						if (TRACE_MODULATORS) {
 							for (int m = 0; m < mods.length; m++) {
-								debug("    -" + mods[m]);
+								log.debug("    -" + mods[m]);
 							}
 						}
 					}
@@ -1153,14 +1152,14 @@ public class Parser {
 				presetData[i].setZones(zones);
 			}
 
-			if (TRACE) debug(" |creating instrument zones...");
+			if (TRACE) log.debug(" |creating instrument zones...");
 			for (int i = 0; i < instData.length; i++) {
 				int zoneStart = instZoneIndexes[i];
 				int nextZone = instZoneIndexes[i + 1];
 				SoundFontInstrumentZone[] zones = new SoundFontInstrumentZone[nextZone
 						- zoneStart];
 				if (TRACE_PROCESSOR) {
-					debug("  inst " + i + ": " + zones.length + " zones ("
+					log.debug("  inst " + i + ": " + zones.length + " zones ("
 							+ instData[i].getName() + ").");
 				}
 				for (int z = zoneStart; z < nextZone; z++) {
@@ -1193,15 +1192,15 @@ public class Parser {
 					zones[z - zoneStart] = new SoundFontInstrumentZone(gens,
 							mods, sample);
 					if (TRACE_PROCESSOR) {
-						debug("   inst zone " + z + ": " + zones[z - zoneStart]);
+						log.debug("   inst zone " + z + ": " + zones[z - zoneStart]);
 						if (TRACE_GENERATORS) {
 							for (int g = 0; g < gens.length; g++) {
-								debug("    -" + gens[g]);
+								log.debug("    -" + gens[g]);
 							}
 						}
 						if (TRACE_MODULATORS) {
 							for (int m = 0; m < mods.length; m++) {
-								debug("    -" + mods[m]);
+								log.debug("    -" + mods[m]);
 							}
 						}
 					}
@@ -1209,7 +1208,7 @@ public class Parser {
 						// disable this zone
 						zones[z - zoneStart].makeInaccessible();
 						if (TRACE_PROCESSOR) {
-							debug("##inconsistent soundfont: inst " + i
+							log.debug("##inconsistent soundfont: inst " + i
 									+ " zone " + (z - zoneStart)
 									+ " does not provide a sample");
 						}
@@ -1217,7 +1216,7 @@ public class Parser {
 				}
 				instData[i].setZones(zones);
 			}
-			if (TRACE) debug(" |linking stereo samples...");
+			if (TRACE) log.debug(" |linking stereo samples...");
 			for (int i = 0; i < instData.length; i++) {
 				SoundFontInstrument inst = instData[i];
 				SoundFontInstrumentZone[] zones = inst.getZones();
@@ -1249,20 +1248,20 @@ public class Parser {
 									// the right sample is the master zone
 									if (sample.getSampleType() == SoundFontSample.RIGHT_SAMPLE) {
 										if (TRACE_SAMPLELINKS) {
-											debug(" -inst " + i + ", zone " + z
+											log.debug(" -inst " + i + ", zone " + z
 													+ ": making it master: "
 													+ zone);
-											debug("                     slave zone "
+											log.debug("                     slave zone "
 													+ zz + ": " + zone2);
 										}
 										zone.setMasterZone(zone2);
 									} else {
 										if (TRACE_SAMPLELINKS) {
-											debug(" -inst " + i + ", zone "
+											log.debug(" -inst " + i + ", zone "
 													+ zz
 													+ ": making it master: "
 													+ zone2);
-											debug("                     slave zone "
+											log.debug("                     slave zone "
 													+ z + ": " + zone);
 										}
 										zone2.setMasterZone(zone);
@@ -1270,20 +1269,20 @@ public class Parser {
 									break;
 								} else {
 									if (DEBUG_SAMPLELINKS) {
-										debug("  ## inst " + i
+										log.debug("  ## inst " + i
 												+ " could not match zone " + zz
 												+ ": ");
 										if (!zone2.matchesKeyRegion(zone)) {
-											debug("   ## key region does not match");
+											log.debug("   ## key region does not match");
 										}
 										if (zone2.getSample() != sampleLink) {
-											debug("   ## samples don't match: sample1 = "
+											log.debug("   ## samples don't match: sample1 = "
 													+ sampleLink);
-											debug("                          sample2 = "
+											log.debug("                          sample2 = "
 													+ zone2.getSample());
 										}
 										if (zone2.getSample().getSampleType() != sampleLinkType) {
-											debug("   ## wrong sample type: expected="
+											log.debug("   ## wrong sample type: expected="
 													+ SoundFontSample.sampleType2string(sampleLinkType)
 													+ " actual="
 													+ SoundFontSample.sampleType2string(zone2.getSample().getSampleType()));
@@ -1295,10 +1294,10 @@ public class Parser {
 						// check if successful
 						if ((zone.getZoneLink() == null) && mustGetLinked) {
 							if (TRACE_PROCESSOR) {
-								debug("## inconsistent soundfont: inst zone does not provide a linked sample");
-								debug("##   instrument " + i + ", zone " + z
+								log.debug("## inconsistent soundfont: inst zone does not provide a linked sample");
+								log.debug("##   instrument " + i + ", zone " + z
 										+ ": " + zone);
-								debug("##   " + zone.getSample());
+								log.debug("##   " + zone.getSample());
 							}
 							zone.makeInaccessible();
 						}

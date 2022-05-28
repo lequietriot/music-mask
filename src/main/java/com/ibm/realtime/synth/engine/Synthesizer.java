@@ -26,13 +26,12 @@
 package com.ibm.realtime.synth.engine;
 
 import com.ibm.realtime.synth.utils.AsynchExec;
+import lombok.extern.slf4j.Slf4j;
 
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.ListIterator;
-
-import static com.ibm.realtime.synth.utils.Debug.*;
 
 /*
  * TODO: Note On events (and controller events?) should be dispatched *before*
@@ -109,6 +108,7 @@ import static com.ibm.realtime.synth.utils.Debug.*;
  * 
  * @author florian
  */
+@Slf4j
 public class Synthesizer implements MidiIn.Listener, AudioRendererListener,
 		AsynchExec.Listener<MidiEvent> {
 
@@ -389,7 +389,7 @@ public class Synthesizer implements MidiIn.Listener, AudioRendererListener,
 			asynchRenderer.start();
 		}
 		if (DEBUG_SYNTH) {
-			debug("Set asynchronous render threads to " + count
+			log.debug("Set asynchronous render threads to " + count
 					+ " threads -> " + asynchRenderer.getActiveCount()
 					+ " active threads");
 		}
@@ -666,7 +666,7 @@ public class Synthesizer implements MidiIn.Listener, AudioRendererListener,
 						&& patch.getBank() == bank
 						&& patch.getProgram() == program && !ni.done()) {
 					if (DEBUG_SYNTH) {
-						debug("Synth " + nextAudioSliceTime.getMillisTime()
+						log.debug("Synth " + nextAudioSliceTime.getMillisTime()
 								+ ": stopping exclusive note, level="
 								+ patch.getExclusiveLevel() + " note:" + ni);
 					}
@@ -695,7 +695,7 @@ public class Synthesizer implements MidiIn.Listener, AudioRendererListener,
 					// no need to check linked notes
 					ni.release(time);
 					if (DEBUG_SYNTH) {
-						debug("Synth " + nextAudioSliceTime.getMillisTime()
+						log.debug("Synth " + nextAudioSliceTime.getMillisTime()
 								+ ": releasing sustained note:" + ni);
 					}
 				}
@@ -721,7 +721,7 @@ public class Synthesizer implements MidiIn.Listener, AudioRendererListener,
 					// no need to check linked notes
 					ni.setSostenuto(time, active);
 					if (DEBUG_SYNTH) {
-						debug("Synth " + nextAudioSliceTime.getMillisTime()
+						log.debug("Synth " + nextAudioSliceTime.getMillisTime()
 								+ ": " + "setting sostenuto to " + active
 								+ ": note:" + ni);
 					}
@@ -738,7 +738,7 @@ public class Synthesizer implements MidiIn.Listener, AudioRendererListener,
 	 */
 	private void handleAllSoundOff(AudioMixer localMixer, MidiChannel channel) {
 		if (DEBUG_SYNTH) {
-			debug("Synth " + nextAudioSliceTime.getMillisTime()
+			log.debug("Synth " + nextAudioSliceTime.getMillisTime()
 					+ ": all sound off channel " + channel);
 		}
 		AudioInput[] lines = localMixer.getAudioStreamsArray();
@@ -763,7 +763,7 @@ public class Synthesizer implements MidiIn.Listener, AudioRendererListener,
 	private void handleAllNotesOff(AudioMixer localMixer, MidiChannel channel,
 			AudioTime time) {
 		if (DEBUG_SYNTH) {
-			debug("Synth " + nextAudioSliceTime.getMillisTime()
+			log.debug("Synth " + nextAudioSliceTime.getMillisTime()
 					+ ": all notes off channel " + channel);
 		}
 		AudioInput[] lines = localMixer.getAudioStreamsArray();
@@ -796,19 +796,17 @@ public class Synthesizer implements MidiIn.Listener, AudioRendererListener,
 		NoteInput thisNoteStream = firstNoteStream;
 
 		if (firstNoteStream == null) {
-			if (DEBUG_SHOW_ERRORS) {
-				debug("Synth: cannot find sample for channel=" + channel
-						+ ", bank=" + channel.getBank() + ", program="
-						+ channel.getProgram() + ", note=" + note + " vel="
-						+ vel);
-			}
+			log.debug("Synth: cannot find sample for channel=" + channel
+					+ ", bank=" + channel.getBank() + ", program="
+					+ channel.getProgram() + ", note=" + note + " vel="
+					+ vel);
 		} else {
 			Patch patch = thisNoteStream.getPatch();
 			if (patch.isSelfExclusive()) {
 				NoteInput ni = getNoteFromMixer(localMixer, channel, note);
 				if (ni != null) {
 					if (DEBUG_SYNTH) {
-						debug("Synth " + nextAudioSliceTime.getMillisTime()
+						log.debug("Synth " + nextAudioSliceTime.getMillisTime()
 								+ ": " + "stopping self-exclusive note " + ni);
 					}
 					stopAsap(ni);
@@ -817,7 +815,7 @@ public class Synthesizer implements MidiIn.Listener, AudioRendererListener,
 
 			if (patch.getExclusiveLevel() != 0) {
 				if (DEBUG_SYNTH) {
-					debug("Synth " + nextAudioSliceTime.getMillisTime() + ": "
+					log.debug("Synth " + nextAudioSliceTime.getMillisTime() + ": "
 							+ "playing exclusive note, level="
 							+ patch.getExclusiveLevel());
 				}
@@ -833,13 +831,13 @@ public class Synthesizer implements MidiIn.Listener, AudioRendererListener,
 				localMixer.addAudioStream(thisNoteStream);
 				if (DEBUG_SYNTH_TIMING) {
 					if (thisNoteStream != firstNoteStream) {
-						debug("Synth NoteOn: nextAudioSlice="
+						log.debug("Synth NoteOn: nextAudioSlice="
 								+ nextAudioSliceTime.getMillisTime() + "ms. "
 								+ "adding linked instrument with "
 								+ time.subtract(nextAudioSliceTime)
 								+ " delay: " + thisNoteStream);
 					} else {
-						debug("Synth NoteOn: nextAudioSlice="
+						log.debug("Synth NoteOn: nextAudioSlice="
 								+ nextAudioSliceTime.getMillisTime() + "ms. "
 								+ "adding instrument with "
 								+ time.subtract(nextAudioSliceTime)
@@ -869,9 +867,9 @@ public class Synthesizer implements MidiIn.Listener, AudioRendererListener,
 						&& ni.getTriggerNote() == note) {
 					if (DEBUG_SYNTH) {
 						if (!ni.done()) {
-							debug("Synth: Note Off: releasing note " + ni);
+							log.debug("Synth: Note Off: releasing note " + ni);
 						} else {
-							debug("Synth: Note Off: note " + ni
+							log.debug("Synth: Note Off: note " + ni
 									+ " already done playing.");
 						}
 					}
@@ -890,7 +888,7 @@ public class Synthesizer implements MidiIn.Listener, AudioRendererListener,
 	 */
 	private final void dispatchEvent(MidiEvent event) {
 		if (DEBUG_SYNTH_IO) {
-			debug("Synth: Dispatching MIDI event " + event);
+			log.debug("Synth: Dispatching MIDI event " + event);
 		}
 		MidiChannel channel = getChannel(event.getChannel());
 		switch (event.getStatus()) {
@@ -984,8 +982,6 @@ public class Synthesizer implements MidiIn.Listener, AudioRendererListener,
 		}
 	}
 
-	// listener MidiIn.Listener
-
 	/**
 	 * Receive an event. The event's time should be aligned with the time of the
 	 * Mixer, i.e. with the time passed to newAudioSlice().
@@ -1017,9 +1013,9 @@ public class Synthesizer implements MidiIn.Listener, AudioRendererListener,
 			// if (event.getStatus() == 0x90 && startDebugTime == 0) {
 			// startDebugTime = System.nanoTime();
 			// }
-			// debug("Synth "+((System.nanoTime() - startDebugTime)/1000000)+":
+			// log.debug("Synth "+((System.nanoTime() - startDebugTime)/1000000)+":
 			// Incoming MIDI event " + event);
-			debug("Synth: Incoming MIDI event: " + event);
+			log.debug("Synth: Incoming MIDI event: " + event);
 		}
 		// patch the event so that it has the corrected time
 		if (benchmarkMode) {
@@ -1052,7 +1048,7 @@ public class Synthesizer implements MidiIn.Listener, AudioRendererListener,
 			}
 			long eventSliceDiff = eventTime.getMillisTime()
 					- nextAudioSliceTime.getMillisTime();
-			debug("Synth: Incoming: " + "adjustedEventTime="
+			log.debug("Synth: Incoming: " + "adjustedEventTime="
 					+ eventTime.getMillisTime() + "ms, " + "nextSlice="
 					+ nextAudioSliceTime.getMillisTime() + "ms, "
 					+ "eventSliceDiff=" + eventSliceDiff + "ms" + add);
@@ -1068,7 +1064,7 @@ public class Synthesizer implements MidiIn.Listener, AudioRendererListener,
 		// // don't queue if the event is already too late
 		// if (nextAudioSliceTime.laterOrEqualThan(eventTime)) {
 		// if (DEBUG_SYNTH) {
-		// debug("## Synth: event comes too late for correct scheduling! "
+		// log.debug("## Synth: event comes too late for correct scheduling! "
 		// + "event=" + event);
 		// }
 		// dispatchEvent(event);
@@ -1091,16 +1087,16 @@ public class Synthesizer implements MidiIn.Listener, AudioRendererListener,
 
 		if (DEBUG_SYNTH) {
 			if (debugShowAudioTime > 0) {
-				debug("Synth.newAudioSlice: Audio Time: "
+				log.debug("Synth.newAudioSlice: Audio Time: "
 						+ time.getMillisTime() + "ms, queue size="
 						+ eventQueue.size());
 				if (masterClock != null) {
 					long master = masterClock.getAudioTime().getMillisTime();
 					long diff = (time.getMillisTime() - master);
-					debug("           master:" + master
+					log.debug("           master:" + master
 							+ "ms, masterSliceDiff=" + diff + "ms.");
 					if (diff > (fixedDelayNanos / 1000000)) {
-						debug(" ## > fixedDelay=" + (fixedDelayNanos / 1000000)
+						log.debug(" ## > fixedDelay=" + (fixedDelayNanos / 1000000)
 								+ "ms!");
 					}
 				}
@@ -1133,11 +1129,11 @@ public class Synthesizer implements MidiIn.Listener, AudioRendererListener,
 		MidiChannel mc = getChannel(me.getChannel());
 		AudioTime time = me.getTime();
 		if (size == 1) {
-			listeners.get(0).midiEventPlayed(time, me.getSource(), mc,
+			listeners.get(0).midiEventPlayed(time, mc,
 					me.getStatus(), me.getData1(), me.getData2());
 		} else {
 			for (SynthesizerListener L : listeners) {
-				L.midiEventPlayed(time, me.getSource(), mc, me.getStatus(),
+				L.midiEventPlayed(time, mc, me.getStatus(),
 						me.getData1(), me.getData2());
 			}
 		}
@@ -1175,7 +1171,7 @@ public class Synthesizer implements MidiIn.Listener, AudioRendererListener,
 			Class.forName("java.util.EventObject");
 			Class.forName("javax.sound.sampled.LineEvent");
 		} catch (Throwable t) {
-			error(t);
+			log.debug(String.valueOf(t));
 		}
 
 	}
@@ -1443,7 +1439,7 @@ public class Synthesizer implements MidiIn.Listener, AudioRendererListener,
 
 		public void run() {
 			if (DEBUG_SYNTH) {
-				debug("Synthesizer: starting asynchronous note dispatcher");
+				log.debug("Synthesizer: starting asynchronous note dispatcher");
 			}
 			MidiEvent event = null;
 			while (!doStop) {
@@ -1467,11 +1463,11 @@ public class Synthesizer implements MidiIn.Listener, AudioRendererListener,
 						}
 					}
 				} catch (Exception e) {
-					error(e);
+					log.debug(String.valueOf(e));
 				}
 			}
 			if (DEBUG_SYNTH) {
-				debug("Synthesizer: stopped asynchronous note dispatcher");
+				log.debug("Synthesizer: stopped asynchronous note dispatcher");
 			}
 		}
 	}

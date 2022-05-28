@@ -34,8 +34,6 @@ package com.ibm.realtime.synth.utils;
 import javax.sound.sampled.AudioFormat;
 import java.nio.ByteOrder;
 
-import static com.ibm.realtime.synth.utils.Debug.out;
-
 public class AudioUtils {
 
 	private final static double EPSILON = 1.0e-9;
@@ -258,32 +256,5 @@ public class AudioUtils {
 		}
 		
 	}
-	
-	// UNIT TEST
 
-	/**
-	 * Test some of this classes conversion functions.
-	 */
-	public static void main(String[] params) {
-		double sampleRate = 192000.0;
-		out("Testing nanos2samples and samples2nanos...");
-		for (int i = 1; i < 20 * 24 * 60 * 60; i += i) {
-			long nanos = ((long) i) * 1000000000L;
-			long samples = nanos2samples(nanos, sampleRate);
-			long nanosBack = samples2nanos(samples, sampleRate);
-			long diff = nanos - nanosBack;
-			out("  " + i + "s: " + nanos + "ns -> " + samples + " samples -> "
-					+ nanosBack + "ns. Diff=" + diff + "ns");
-		}
-		out("Testing millis2samples and samples2millis...");
-		for (int i = 1; i < 20 * 24 * 60 * 60; i += i) {
-			long millis = ((long) i) * 1000L;
-			long samples = millis2samples(millis, sampleRate);
-			long millisBack = samples2millis(samples, sampleRate);
-			long diff = millis - millisBack;
-			out("  " + i + "s: " + millis + "ms -> " + samples + " samples -> "
-					+ millisBack + "ms. Diff=" + diff + "ms");
-		}
-		out("All diffs need to be close to 0!");
-	}
 }

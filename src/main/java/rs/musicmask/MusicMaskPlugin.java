@@ -26,6 +26,7 @@ package rs.musicmask;
 
 import com.google.inject.Provides;
 import com.ibm.realtime.synth.test.SoundFont2Synth;
+import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Client;
 import net.runelite.api.GameState;
 import net.runelite.api.events.GameTick;
@@ -44,6 +45,7 @@ import javax.inject.Inject;
         description = "Allows you to customize how the game music sounds",
         tags = {"sound", "music", "custom"}
 )
+@Slf4j
 public class MusicMaskPlugin extends Plugin
 {
     @Inject
@@ -67,7 +69,13 @@ public class MusicMaskPlugin extends Plugin
     {
         currentTrackId = client.getMusicCurrentTrackId();
         isJingle = client.isPlayingJingle();
-        clientVolume = client.getMusicVolume();
+
+        if (client.getGameState().equals(GameState.LOGIN_SCREEN)) {
+            clientVolume = 255;
+        }
+        else {
+            clientVolume = client.getMusicVolume();
+        }
         initSoundSynth();
     }
 
@@ -80,7 +88,6 @@ public class MusicMaskPlugin extends Plugin
                     new Thread(() -> {
                         try {
                             SoundFont2Synth.start(musicMaskConfig.getCustomSoundBankPath(), trackDefinition.getMidi(), musicMaskConfig.getMusicVolume());
-                            System.out.println(currentTrackId);
                         } catch (Exception e) {
                             e.printStackTrace();
                         }

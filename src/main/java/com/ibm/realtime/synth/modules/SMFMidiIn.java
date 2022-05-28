@@ -27,18 +27,17 @@ package com.ibm.realtime.synth.modules;
 
 import com.ibm.realtime.synth.engine.AudioTime;
 import com.ibm.realtime.synth.engine.MidiIn;
+import lombok.extern.slf4j.Slf4j;
 
 import javax.sound.midi.*;
 import java.io.ByteArrayInputStream;
-
-import static com.ibm.realtime.synth.utils.Debug.debug;
-import static com.ibm.realtime.synth.utils.Debug.format3;
 
 /**
  * A class to provide MIDI Input from a Standard MIDI File (SMF)
  * 
  * @author florian
  */
+@Slf4j
 public class SMFMidiIn implements MidiIn, MetaEventListener {
 
 	public static boolean DEBUG_SMF_MIDI_IN = false;
@@ -142,16 +141,16 @@ public class SMFMidiIn implements MidiIn, MetaEventListener {
 			}
 		}
 		if (DEBUG_SMF_MIDI_IN) {
-			debug("Using sequencer: " + sequencer.getDeviceInfo().getName());
+			log.debug("Using sequencer: " + sequencer.getDeviceInfo().getName());
 		}
 		if (DEBUG_SMF_MIDI_IN) {
-			debug("Opening MIDI file: " + file);
+			log.debug("Opening MIDI file: " + file);
 		}
 		sequence = MidiSystem.getSequence(new ByteArrayInputStream(file));
 		if (DEBUG_SMF_MIDI_IN) {
-			debug("Got MIDI sequence with " + sequence.getTracks().length
+			log.debug("Got MIDI sequence with " + sequence.getTracks().length
 					+ " tracks. Duration: "
-					+ format3(sequence.getMicrosecondLength() / 1000000.0)
+					+ (sequence.getMicrosecondLength() / 1000000.0)
 					+ " seconds.");
 		}
 		seqTransmitter = sequencer.getTransmitter();
@@ -163,7 +162,7 @@ public class SMFMidiIn implements MidiIn, MetaEventListener {
 		sequencer.open();
 		this.file = file;
 		if (DEBUG_SMF_MIDI_IN) {
-			debug("Sequencer opened and connected.");
+			log.debug("Sequencer opened and connected.");
 		}
 	}
 
@@ -177,7 +176,7 @@ public class SMFMidiIn implements MidiIn, MetaEventListener {
 		if (sequencer != null) {
 			sequencer.close();
 			if (DEBUG_SMF_MIDI_IN) {
-				debug("Closed Sequencer.");
+				log.debug("Closed Sequencer.");
 			}
 		}
 		file = null;
@@ -199,8 +198,8 @@ public class SMFMidiIn implements MidiIn, MetaEventListener {
 			}
 			sequencer.start();
 			if (DEBUG_SMF_MIDI_IN) {
-				debug("Started sequencer. Current position: "
-						+ format3(sequencer.getMicrosecondPosition() / 1000000.0));
+				log.debug("Started sequencer. Current position: "
+						+ (sequencer.getMicrosecondPosition() / 1000000.0));
 			}
 		}
 	}
@@ -209,8 +208,8 @@ public class SMFMidiIn implements MidiIn, MetaEventListener {
 		if (isOpen()) {
 			sequencer.stop();
 			if (DEBUG_SMF_MIDI_IN) {
-				debug("Stopped sequencer. Current position: "
-						+ format3(sequencer.getMicrosecondPosition() / 1000000.0));
+				log.debug("Stopped sequencer. Current position: "
+						+ (sequencer.getMicrosecondPosition() / 1000000.0));
 			}
 		}
 	}

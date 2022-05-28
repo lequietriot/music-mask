@@ -29,13 +29,10 @@ import com.ibm.realtime.synth.engine.AudioTime;
 import com.ibm.realtime.synth.engine.MidiEvent;
 import com.ibm.realtime.synth.engine.MidiIn;
 import com.ibm.realtime.synth.engine.ThreadFactory;
-import com.ibm.realtime.synth.utils.Debug;
+import lombok.extern.slf4j.Slf4j;
 
 import java.util.ArrayList;
 import java.util.List;
-
-import static com.ibm.realtime.synth.utils.Debug.debug;
-import static com.ibm.realtime.synth.utils.Debug.error;
 
 /**
  * A proprietary implementation of the MidiIn interface for receiving MIDI
@@ -100,6 +97,7 @@ import static com.ibm.realtime.synth.utils.Debug.error;
  * 
  * @author florian
  */
+@Slf4j
 public class DirectMidiIn implements Runnable, MidiIn {
 
 	public static boolean DEBUG_DIRECTMIDIIN = false;
@@ -117,9 +115,9 @@ public class DirectMidiIn implements Runnable, MidiIn {
 			libAvailable = true;
 		} catch (UnsatisfiedLinkError ule) {
 			if (DEBUG_DIRECTMIDIIN) {
-				Debug.debug("DirectMidiIn not available (failed to load native library)");
+				log.debug("DirectMidiIn not available (failed to load native library)");
 				// Debug.debug(ule);
-				Debug.debug("java.library.path="
+				log.debug("java.library.path="
 						+ System.getProperty("java.library.path"));
 			}
 		}
@@ -228,24 +226,11 @@ public class DirectMidiIn implements Runnable, MidiIn {
 				handle = 0;
 			}
 		}
-		waitForThreadToExit();
 	}
 
 	private void startThread() {
 		runner = ThreadFactory.createThread(this, getClass().getSimpleName()
 				+ " read thread", MIDIIN_THREAD_PRIORITY);
-	}
-
-	/** pre-condition: stopRequested was set to true */
-	private void waitForThreadToExit() {
-		if (runner != null) {
-			try {
-				while (inThread && stopRequested) {
-					Thread.sleep(1);
-				}
-			} catch (InterruptedException ie) {
-			}
-		}
 	}
 
 	/*
@@ -395,7 +380,7 @@ public class DirectMidiIn implements Runnable, MidiIn {
 	 */
 	public void run() {
 		if (DEBUG_DIRECTMIDIIN) {
-			debug("DirectMidiIn: in reading thread");
+			log.debug("DirectMidiIn: in reading thread");
 		}
 		inThread = true;
 		configChange = true;
@@ -425,7 +410,7 @@ public class DirectMidiIn implements Runnable, MidiIn {
 					if (ret == 0) {
 						Thread.sleep(0, 100);
 					} else if (status < 0x80) {
-						error("DirectMidiIn: read returned error code "
+						log.debug("DirectMidiIn: read returned error code "
 								+ status);
 					} else if (status == 0xF0) {
 						// long event
@@ -434,7 +419,7 @@ public class DirectMidiIn implements Runnable, MidiIn {
 						data[0] = (byte) status;
 						int longRet = nReadLong(handle, data, 1, byteLength);
 						if (longRet < 0) {
-							error("DirectMidiIn: readLong returned error code "
+							log.debug("DirectMidiIn: readLong returned error code "
 									+ longRet);
 						} else {
 							MidiEvent me = new MidiEvent(this, time, data);
@@ -461,14 +446,11 @@ public class DirectMidiIn implements Runnable, MidiIn {
 						}
 					}
 				} catch (Throwable t) {
-					debug(t);
+					log.debug(String.valueOf(t));
 				}
 			}
 		} finally {
 			inThread = false;
-		}
-		if (DEBUG_DIRECTMIDIIN) {
-			debug("DirectMidiIn: exit reading thread");
 		}
 	}
 

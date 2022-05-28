@@ -25,10 +25,9 @@
  */
 package com.ibm.realtime.synth.engine;
 
-import java.lang.reflect.Constructor;
+import lombok.extern.slf4j.Slf4j;
 
-import static com.ibm.realtime.synth.utils.Debug.debug;
-import static com.ibm.realtime.synth.utils.Debug.error;
+import java.lang.reflect.Constructor;
 
 /**
  * A centralized class for creation of threads. If available, real time threads
@@ -36,6 +35,7 @@ import static com.ibm.realtime.synth.utils.Debug.error;
  * 
  * @author florian
  */
+@Slf4j
 public class ThreadFactory {
 
 	protected static boolean useRTSJ = true;
@@ -99,7 +99,7 @@ public class ThreadFactory {
 		int javaPriority = priority2javaPriority(priority);
 		res.setPriority(javaPriority);
 		if (DEBUG_THREAD_FACTORY) {
-			debug("Created NON-RTSJ thread '" + name + "' logical priority "
+			log.debug("Created NON-RTSJ thread '" + name + "' logical priority "
 					+ priority + "; Java priority " + javaPriority);
 		}
 		return res;
@@ -165,10 +165,10 @@ public class ThreadFactory {
 					bCouldSetRealtimeThreadPriority = (pp != null);
 					if (DEBUG_THREAD_FACTORY) {
 						if (pp == null) {
-							debug("Created RTSJ thread '" + name
+							log.debug("Created RTSJ thread '" + name
 									+ "' with no priority setting");
 						} else {
-							debug("Created RTSJ thread '" + name
+							log.debug("Created RTSJ thread '" + name
 									+ "' priority=" + priority);
 						}
 					}
@@ -179,7 +179,7 @@ public class ThreadFactory {
 			}
 		} catch (Exception e) {
 			if (DEBUG_THREAD_FACTORY) {
-				error("Unable to create RTSJ thread: " + e);
+				log.debug("Unable to create RTSJ thread: " + e);
 			}
 		}
 

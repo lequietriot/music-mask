@@ -37,12 +37,11 @@ public interface SynthesizerListener {
 	 * it is received by the midiInReceived() method).
 	 *  
 	 * @param time the time, normalized to the master clock 
-	 * @param source the MidiIn instance that received this event (may be null)
 	 * @param channel the MidiChannel of this event (may be null)
 	 * @param status the status byte
 	 * @param data1 the first data byte for 2/3 byte events
 	 * @param data2 the second data byte for 3 byte events
 	 */
-	public void midiEventPlayed(AudioTime time, MidiIn source, MidiChannel channel, int 
+	void midiEventPlayed(AudioTime time, MidiChannel channel, int
 			status, int data1, int data2);
 }

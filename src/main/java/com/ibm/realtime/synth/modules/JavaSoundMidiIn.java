@@ -27,14 +27,11 @@ package com.ibm.realtime.synth.modules;
 
 import com.ibm.realtime.synth.engine.AudioTime;
 import com.ibm.realtime.synth.engine.MidiIn;
-import com.ibm.realtime.synth.utils.Debug;
+import lombok.extern.slf4j.Slf4j;
 
 import javax.sound.midi.*;
 import java.util.ArrayList;
 import java.util.List;
-
-import static com.ibm.realtime.synth.utils.Debug.DEBUG_MASTER_SWITCH;
-import static com.ibm.realtime.synth.utils.Debug.debug;
 
 /**
  * Class for handling incoming MIDI events from a Java Sound MIDI device. This
@@ -46,6 +43,7 @@ import static com.ibm.realtime.synth.utils.Debug.debug;
  * 
  * @author florian
  */
+@Slf4j
 public class JavaSoundMidiIn implements MidiIn {
 
 	public static boolean DEBUG_JSMIDIIN = false;
@@ -137,7 +135,7 @@ public class JavaSoundMidiIn implements MidiIn {
 		receiver.setID(devIndex);
 		midiInTransmitter.setReceiver(receiver);
 		if (DEBUG_JSMIDIIN) {
-			debug("Opened MIDI IN device '" + info.info + "'");
+			log.debug("Opened MIDI IN device '" + info.info + "'");
 		}
 	}
 
@@ -146,22 +144,20 @@ public class JavaSoundMidiIn implements MidiIn {
 			midiInTransmitter.setReceiver(null);
 		}
 		if (midiDev != null) {
-			if (DEBUG_MASTER_SWITCH) {
-				DevInfo devInfo = null;
-				for (DevInfo devInfo2 : devList) {
-					if (devInfo2.info == midiDev.getDeviceInfo()) {
-						devInfo = devInfo2;
-						break;
-					}
+			DevInfo devInfo = null;
+			for (DevInfo devInfo2 : devList) {
+				if (devInfo2.info == midiDev.getDeviceInfo()) {
+					devInfo = devInfo2;
+					break;
 				}
-				if (DEBUG_JSMIDIIN) {
-					debug("Closing MIDI IN device '" + devInfo + "'");
-				}
+			}
+			if (DEBUG_JSMIDIIN) {
+				log.debug("Closing MIDI IN device '" + devInfo + "'");
 			}
 			try {
 				midiDev.close();
 			} catch (Exception e) {
-				debug(e);
+				log.debug(String.valueOf(e));
 			}
 			midiDev = null;
 		}
@@ -214,7 +210,7 @@ public class JavaSoundMidiIn implements MidiIn {
 	}
 
 	private static void setupMidiDevices() {
-		if (DEBUG_JSMIDIIN) debug("Gathering MIDI devices...");
+		if (DEBUG_JSMIDIIN) log.debug("Gathering MIDI devices...");
 		if (devList == null) {
 			devList = new ArrayList<DevInfo>();
 			MidiDevice.Info[] infos = MidiSystem.getMidiDeviceInfo();
@@ -228,12 +224,12 @@ public class JavaSoundMidiIn implements MidiIn {
 						devList.add(new DevInfo(info));
 					}
 				} catch (MidiUnavailableException mue) {
-					Debug.debug(mue);
+					log.debug(String.valueOf(mue));
 				}
 			}
 		}
 		if (DEBUG_JSMIDIIN) {
-			debug("done (" + devList.size() + " devices available).");
+			log.debug("done (" + devList.size() + " devices available).");
 		}
 	}
 

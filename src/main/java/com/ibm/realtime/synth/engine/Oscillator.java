@@ -25,10 +25,12 @@
  */
 package com.ibm.realtime.synth.engine;
 
+import lombok.extern.slf4j.Slf4j;
+
 import javax.sound.sampled.AudioFormat;
 
 import static com.ibm.realtime.synth.utils.AudioUtils.isAlmost;
-import static com.ibm.realtime.synth.utils.Debug.debug;
+
 
 /**
  * Class for creating audio samples from the instrument data. The oscillator
@@ -41,6 +43,7 @@ import static com.ibm.realtime.synth.utils.Debug.debug;
  * @author florian
  *
  */
+@Slf4j
 public abstract class Oscillator {
 
 	public static boolean DEBUG_OSC = false;
@@ -228,7 +231,7 @@ public abstract class Oscillator {
 					// will not try to read more samples
 					nextBufferNativePos = endPos + 1000;
 					count = thisCount;
-					// exit if no more samples can be written
+
 					if (thisCount <= 0) {
 						nativePos = nextBufferNativePos;
 						return 0;
@@ -239,7 +242,7 @@ public abstract class Oscillator {
 							nativePos + (thisCount * nativePosDelta)
 									- (loopEnd - loopStart);
 					if (DEBUG_OSC) {
-						debug("loop: nativePos="
+						log.debug("loop: nativePos="
 								+ (nativePos - nativeSamplesStartPos)
 								+ " thisCount="
 								+ thisCount
@@ -255,7 +258,7 @@ public abstract class Oscillator {
 				}
 			} else {
 				if (DEBUG_OSC) {
-					debug("regular: nativePos="
+					log.debug("regular: nativePos="
 							+ (nativePos - nativeSamplesStartPos)
 							+ " thisCount=" + thisCount + " nextNativePos="
 							+ (nextBufferNativePos - nativeSamplesStartPos)
@@ -274,7 +277,7 @@ public abstract class Oscillator {
 						(float) ((int) (buffer.getChannel(0)[0] * 1000.0)) / 1000.0f;
 				float sample2 =
 						(float) ((int) (buffer.getChannel(0)[thisCount - 1] * 1000.0)) / 1000.0f;
-				debug("   after conversion: first sample=" + sample1
+				log.debug("   after conversion: first sample=" + sample1
 						+ " last sample = " + sample2);
 			}
 

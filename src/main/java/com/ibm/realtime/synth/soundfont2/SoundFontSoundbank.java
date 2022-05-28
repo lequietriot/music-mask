@@ -27,6 +27,7 @@ package com.ibm.realtime.synth.soundfont2;
 
 import com.ibm.realtime.synth.engine.*;
 import com.ibm.realtime.synth.utils.AudioUtils;
+import lombok.extern.slf4j.Slf4j;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -34,15 +35,13 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-import static com.ibm.realtime.synth.utils.Debug.debug;
-import static com.ibm.realtime.synth.utils.Debug.format3;
-
 /**
  * Soundbank that reads from Creative Lab's SoundFont 2 files.
  * 
  * @author florian
  * 
  */
+@Slf4j
 public class SoundFontSoundbank implements Soundbank {
 
 	public static boolean TRACE_SB2SB = false;
@@ -104,7 +103,7 @@ public class SoundFontSoundbank implements Soundbank {
 	public NoteInput createNoteInput(Synthesizer.Params params, AudioTime time,
 			MidiChannel channel, int note, int vel) {
 		if (TRACE_SB2SB) {
-			debug("createNoteInput: look for sample for note=" + note
+			log.debug("createNoteInput: look for sample for note=" + note
 					+ ", vel=" + vel);
 		}
 		NoteInput result = null;
@@ -117,33 +116,33 @@ public class SoundFontSoundbank implements Soundbank {
 			if (preset != null) {
 				// we found a preset! now find a fitting zone
 				if (TRACE_SB2SB) {
-					debug("-matching preset: " + preset);
+					log.debug("-matching preset: " + preset);
 				}
 				List<SoundFontPresetZone> pZones = preset.getZones(note, vel);
 				if (pZones != null) {
 					for (SoundFontPresetZone pZone : pZones) {
 						if (TRACE_SB2SB) {
-							debug(" -matching preset zone: " + pZone);
+							log.debug(" -matching preset zone: " + pZone);
 						}
 						SoundFontPresetZone pZoneGlobal =
 								preset.getGlobalZone();
 						if (TRACE_SB2SB) {
 							if (pZoneGlobal != null) {
-								debug(" -matching global preset zone: "
+								log.debug(" -matching global preset zone: "
 										+ pZoneGlobal);
 							}
 						}
 
 						SoundFontInstrument inst = pZone.getInstrument();
 						if (TRACE_SB2SB) {
-							debug("  -matching inst: " + inst);
+							log.debug("  -matching inst: " + inst);
 						}
 						List<SoundFontInstrumentZone> iZones =
 								inst.getZones(note, vel);
 						if (iZones != null) {
 							for (SoundFontInstrumentZone iZone : iZones) {
 								if (TRACE_SB2SB) {
-									debug("   -matching inst Zone: " + iZone);
+									log.debug("   -matching inst Zone: " + iZone);
 								}
 								NoteInput ni =
 										createNoteInput(params, time, channel,
@@ -156,7 +155,7 @@ public class SoundFontSoundbank implements Soundbank {
 											iZone.getZoneLink();
 									if (iZoneLink != null) {
 										if (TRACE_SB2SB) {
-											debug("    -creating phase-locked NoteInput with "
+											log.debug("    -creating phase-locked NoteInput with "
 													+ "inst Zone: " + iZoneLink);
 										}
 										NoteInput linkedNI =
@@ -201,7 +200,7 @@ public class SoundFontSoundbank implements Soundbank {
 				}
 				thisNoteInput.setLinkedNoteInput(newNoteInput);
 				if (TRACE_SB2SB) {
-					debug("   -added linked NoteInput " + newNoteInput);
+					log.debug("   -added linked NoteInput " + newNoteInput);
 				}
 			}
 		}
@@ -217,13 +216,13 @@ public class SoundFontSoundbank implements Soundbank {
 		SoundFontInstrumentZone iZoneGlobal = inst.getGlobalZone();
 		if (TRACE_SB2SB) {
 			if (iZoneGlobal != null) {
-				debug("     -matching global inst Zone: " + iZoneGlobal);
+				log.debug("     -matching global inst Zone: " + iZoneGlobal);
 			}
 		}
 
 		SoundFontSample sample = iZone.getSample();
 		if (TRACE_SB2SB) {
-			debug("     -matching sample: " + sample);
+			log.debug("     -matching sample: " + sample);
 		}
 		SoundFontPatch patch =
 				new SoundFontPatch(note, vel, channel.getBank(),
@@ -296,8 +295,8 @@ public class SoundFontSoundbank implements Soundbank {
 		double linear = AudioUtils.decibel2linear(velDB);
 		art.addLinearInitialAttenuation(linear);
 		if (TRACE_SB2SB) {
-			debug("      -velocity " + vel
-					+ " is mapped to attenuation=" + format3(velDB) + "dB");
+			log.debug("      -velocity " + vel
+					+ " is mapped to attenuation=" + (velDB) + "dB");
 		}
 		
 		// 8.4.2: key number to filter cutoff
@@ -310,7 +309,7 @@ public class SoundFontSoundbank implements Soundbank {
 			int offset = -2400 * (127 - note) / 128;
 			art.getLowPassFilter().addCutoffCents(offset);
 			if (TRACE_SB2SB) {
-				debug("      -key is mapped to filter cutoff: " + offset
+				log.debug("      -key is mapped to filter cutoff: " + offset
 						+ " cents");
 			}
 		//}

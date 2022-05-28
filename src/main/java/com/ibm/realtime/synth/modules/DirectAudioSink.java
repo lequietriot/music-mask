@@ -29,19 +29,16 @@ import com.ibm.realtime.synth.engine.AudioBuffer;
 import com.ibm.realtime.synth.engine.AudioSink;
 import com.ibm.realtime.synth.engine.AudioTime;
 import com.ibm.realtime.synth.utils.AudioUtils;
-import com.ibm.realtime.synth.utils.Debug;
+import lombok.extern.slf4j.Slf4j;
 
 import javax.sound.sampled.AudioFormat;
-import java.util.ArrayList;
-import java.util.List;
-
-import static com.ibm.realtime.synth.utils.Debug.debug;
 
 /**
  * An AudioSink with optimized latency using ALSA drivers directly.
  * 
  * @author florian
  */
+@Slf4j
 public class DirectAudioSink implements AudioSink {
 
 	public static boolean DEBUG_DIRECTSINK = false;
@@ -56,15 +53,14 @@ public class DirectAudioSink implements AudioSink {
 			libAvailable = true;
 		} catch (UnsatisfiedLinkError ule) {
 			if (DEBUG_DIRECTSINK) {
-				Debug.debug("DirectAudioSink not available (failed to load native library)");
-				// Debug.debug(ule);
-				Debug.debug("java.library.path="
+				log.debug("DirectAudioSink not available (failed to load native library)");
+				log.debug("java.library.path="
 						+ System.getProperty("java.library.path"));
 			}
 		}
 	}
 
-	public static final int BIT_TYPE_16_BIT = 1 << 0;
+	public static final int BIT_TYPE_16_BIT = 1;
 	public static final int BIT_TYPE_24_BIT3 = 1 << 1;
 	public static final int BIT_TYPE_24_BIT4 = 1 << 2;
 	public static final int BIT_TYPE_32_BIT = 1 << 3;
@@ -136,15 +132,15 @@ public class DirectAudioSink implements AudioSink {
 		int period = bufferSizeInSamples;
 		// for the ALSA buffer, use double the buffer size
 		bufferSizeInSamples *= 2;
-		openImpl(devName, format, bufferSizeInSamples, period, true);
+		openImpl(devName, format, bufferSizeInSamples, period);
 		if (DEBUG_DIRECTSINK) {
-			debug("open direct soundcard. requested buffer size: "
+			log.debug("open direct soundcard. requested buffer size: "
 					+ bufferSizeInSamples
 					+ " samples. Actual: "
 					+ this.periodSize
 					+ " samples = "
-					+ Debug.format2(AudioUtils.samples2micros(periodSize,
-							format.getSampleRate()) / 1000.0) + " millis");
+					+ (AudioUtils.samples2micros(periodSize,
+					format.getSampleRate()) / 1000.0) + " millis");
 		}
 	}
 
@@ -153,7 +149,7 @@ public class DirectAudioSink implements AudioSink {
 	 * the time offset) will be reset to 0.
 	 */
 	protected synchronized void openImpl(String devName, AudioFormat format,
-			int bufferSizeInSamples, int periodSizeInSamples, boolean blockingIO)
+										 int bufferSizeInSamples, int periodSizeInSamples)
 			throws Exception {
 		if (!libAvailable) {
 			throw new Exception(
@@ -181,7 +177,7 @@ public class DirectAudioSink implements AudioSink {
 		// eventually try to open the device
 		handle = nOpen(devName, (int) format.getSampleRate(),
 				format.getChannels(), format.getSampleSizeInBits(),
-				bufferSizeInSamples, periodSizeInSamples, blockingIO);
+				bufferSizeInSamples, periodSizeInSamples, true);
 		if (handle != 0) {
 			this.devName = devName;
 			periodSize = nGetPeriodSize(handle);
@@ -238,7 +234,7 @@ public class DirectAudioSink implements AudioSink {
 			nClose(handle);
 			handle = 0;
 			if (DEBUG_DIRECTSINK) {
-				debug("closed direct soundcard: " + devName);
+				log.debug("closed direct soundcard: " + devName);
 			}
 			devName = "";
 		}
@@ -285,7 +281,7 @@ public class DirectAudioSink implements AudioSink {
 		} while (written >= 0 && len > 0);
 		if (DEBUG_DIRECTSINK) {
 			if (written < 0) {
-				Debug.error("DirectAudioSink: nWrite() returned " + written);
+				log.debug("DirectAudioSink: nWrite() returned " + written);
 			}
 		}
 	}
@@ -296,14 +292,14 @@ public class DirectAudioSink implements AudioSink {
 	private void underrun(int writtenSamples) {
 		underrunCount++;
 		if (DEBUG_DIRECTSINK) {
-			debug("DirectAudioSink: underrun #" + underrunCount
+			log.debug("DirectAudioSink: underrun #" + underrunCount
 					+ ": wrote only " + writtenSamples + " samples");
 		}
 
 	}
 	
 	/** @return the number of underruns since the last call to this function. */
-	public int getUnderrunCount() {
+	public int getUnderRunCount() {
 		int ret = underrunCount;
 		underrunCount = 0;
 		return ret;
@@ -362,7 +358,7 @@ public class DirectAudioSink implements AudioSink {
 	 * @see com.ibm.realtime.synth.engine.AudioSink#getSampleRate()
 	 */
 	public double getSampleRate() {
-		return (double) format.getSampleRate();
+		return format.getSampleRate();
 	}
 
 	/*
@@ -395,54 +391,6 @@ public class DirectAudioSink implements AudioSink {
 		} else {
 			return new AudioTime(clockOffsetSamples, getSampleRate());
 		}
-	}
-
-	/**
-	 * @return true if the direct audio sink can be used
-	 */
-	public static boolean isAvailable() {
-		return libAvailable;
-	}
-
-	/**
-	 * Returns a list of available devices. It starts with the device identifier
-	 * followed by an optional description. The description is separated by the
-	 * bar | character.
-	 * 
-	 * @return a list of available devices which should not be modified.
-	 */
-	public static List<String> getDeviceList() {
-		if (!isAvailable()) {
-			return new ArrayList<String>(0);
-		}
-		List<DirectAudioSinkDeviceEntry> list = getDeviceEntryList();
-		List<String> deviceCache = new ArrayList<String>(list.size());
-		for (int i = 0; i < list.size(); i++) {
-			deviceCache.add(list.get(i).toString());
-		}
-		return deviceCache;
-	}
-
-	/**
-	 * Remember the device listing for a certain time to optimize repeated calls
-	 */
-	private static List<DirectAudioSinkDeviceEntry> deviceListCache = null;
-
-	/**
-	 * the time in millis when the deviceCache was updated
-	 */
-	private static long deviceListCacheTime = 0;
-
-	public static List<DirectAudioSinkDeviceEntry> getDeviceEntryList() {
-		if (!isAvailable()) {
-			return new ArrayList<DirectAudioSinkDeviceEntry>(0);
-		}
-		if (deviceListCache == null
-				|| deviceListCacheTime + 2000 < System.currentTimeMillis()) {
-			deviceListCache = new ArrayList<DirectAudioSinkDeviceEntry>(20);
-			nFillDeviceNames(deviceListCache);
-		}
-		return deviceListCache;
 	}
 
 	// NATIVE METHODS
@@ -486,12 +434,6 @@ public class DirectAudioSink implements AudioSink {
 	 * Returns the number of samples (not bytes) played by this device
 	 */
 	private native static long nGetPosition(long handle);
-
-	/**
-	 * Fill a list with device description objects.
-	 */
-	private native static void nFillDeviceNames(
-			List<DirectAudioSinkDeviceEntry> list);
 
 	/** @return a textual representation of this audio device */
 	public String toString() {

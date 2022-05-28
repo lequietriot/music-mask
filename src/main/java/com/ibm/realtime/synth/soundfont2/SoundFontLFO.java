@@ -26,10 +26,9 @@
 package com.ibm.realtime.synth.soundfont2;
 
 import com.ibm.realtime.synth.engine.AudioTime;
+import lombok.extern.slf4j.Slf4j;
 
 import static com.ibm.realtime.synth.soundfont2.SoundFontUtils.*;
-import static com.ibm.realtime.synth.utils.Debug.debug;
-import static com.ibm.realtime.synth.utils.Debug.format3;
 
 // TODO: verify relative values (add*() methods) work correctly.
 
@@ -38,6 +37,7 @@ import static com.ibm.realtime.synth.utils.Debug.format3;
  *
  * @author florian
  */
+@Slf4j
 public class SoundFontLFO {
 
 	public static boolean DEBUG_LFO = false;
@@ -160,7 +160,7 @@ public class SoundFontLFO {
 	void setCutoff(double cutoff) {
 		this.cutoff = cutoff;
 		if (DEBUG_LFO) {
-			debug(" " + name + ": set cutoff to " + format3(this.cutoff)
+			log.debug(" " + name + ": set cutoff to " + (this.cutoff)
 					+ " semitones");
 		}
 	}
@@ -171,8 +171,8 @@ public class SoundFontLFO {
 	void addCutoff(double cutoff) {
 		this.cutoff += cutoff;
 		if (DEBUG_LFO) {
-			debug(" " + name + ": add cutoff by " + format3(cutoff)
-					+ ", new value: " + format3(this.cutoff) + " semitones");
+			log.debug(" " + name + ": add cutoff by " + (cutoff)
+					+ ", new value: " + (this.cutoff) + " semitones");
 		}
 	}
 
@@ -189,8 +189,8 @@ public class SoundFontLFO {
 	void setDelayTimeCents(int timecents) {
 		this.delay = timecents2seconds(timecents);
 		if (DEBUG_LFO) {
-			debug(" " + name + ": set delay to " + timecents + " cents, -> "
-					+ format3(delay) + "s");
+			log.debug(" " + name + ": set delay to " + timecents + " cents, -> "
+					+ (delay) + "s");
 		}
 	}
 
@@ -200,8 +200,8 @@ public class SoundFontLFO {
 	void addDelayTimeCents(int timecents) {
 		this.delay *= timecents2seconds(timecents);
 		if (DEBUG_LFO) {
-			debug(" " + name + ": add " + timecents + " cents, new delay: "
-					+ format3(this.delay) + "s");
+			log.debug(" " + name + ": add " + timecents + " cents, new delay: "
+					+ (this.delay) + "s");
 		}
 	}
 
@@ -218,8 +218,8 @@ public class SoundFontLFO {
 	void setFrequencyCents(int cents) {
 		this.frequency = cents2hertzLFO(cents);
 		if (DEBUG_LFO) {
-			debug(" " + name + ": set freq to " + cents + " cents, -> "
-					+ format3(this.frequency) + " Hz");
+			log.debug(" " + name + ": set freq to " + cents + " cents, -> "
+					+ (this.frequency) + " Hz");
 		}
 	}
 
@@ -229,8 +229,8 @@ public class SoundFontLFO {
 	void addFrequencyCents(int cents) {
 		this.frequency *= cents2hertzLFO(cents);
 		if (DEBUG_LFO) {
-			debug(" " + name + ": add freq by " + cents + " cents, new value: "
-					+ format3(this.frequency) + " Hz");
+			log.debug(" " + name + ": add freq by " + cents + " cents, new value: "
+					+ (this.frequency) + " Hz");
 		}
 	}
 
@@ -247,7 +247,7 @@ public class SoundFontLFO {
 	void setPitch(double pitch) {
 		this.pitch = pitch;
 		if (DEBUG_LFO) {
-			debug(" " + name + ": set pitch to " + format3(this.pitch)
+			log.debug(" " + name + ": set pitch to " + (this.pitch)
 					+ " semitones");
 		}
 	}
@@ -258,8 +258,8 @@ public class SoundFontLFO {
 	void addPitch(double pitch) {
 		this.pitch += pitch;
 		if (DEBUG_LFO) {
-			debug(" " + name + ": add pitch by " + format3(pitch)
-					+ ", new value: " + format3(this.pitch) + " semitones");
+			log.debug(" " + name + ": add pitch by " + (pitch)
+					+ ", new value: " + (this.pitch) + " semitones");
 		}
 	}
 
@@ -297,7 +297,7 @@ public class SoundFontLFO {
 	void setVolume(double volume) {
 		this.volume = volume;
 		if (DEBUG_LFO) {
-			debug(" " + name + ": set volume to " + format3(this.volume)
+			log.debug(" " + name + ": set volume to " + (this.volume)
 					+ " dB");
 		}
 	}
@@ -308,8 +308,8 @@ public class SoundFontLFO {
 	void addVolume(double volume) {
 		this.volume += volume;
 		if (DEBUG_LFO) {
-			debug(name + ": add volume by " + format3(volume) + ", new value: "
-					+ format3(this.volume) + " dB");
+			log.debug(name + ": add volume by " + (volume) + ", new value: "
+					+ (this.volume) + " dB");
 		}
 	}
 
@@ -321,10 +321,10 @@ public class SoundFontLFO {
 	}
 
 	public String toString() {
-		return name + ": pitch=" + format3(this.pitch) + " semitones, vol="
-				+ format3(this.volume) + "dB, cutoff=" + format3(this.cutoff)
-				+ " semitones, delay=" + format3(delay) + "s, freq="
-				+ format3(this.frequency) + " Hz.";
+		return name + ": pitch=" + (this.pitch) + " semitones, vol="
+				+ (this.volume) + "dB, cutoff=" + (this.cutoff)
+				+ " semitones, delay=" + (delay) + "s, freq="
+				+ (this.frequency) + " Hz.";
 	}
 
 }

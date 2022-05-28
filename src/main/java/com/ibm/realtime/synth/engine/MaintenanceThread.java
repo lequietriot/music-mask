@@ -25,11 +25,10 @@
  */
 package com.ibm.realtime.synth.engine;
 
+import lombok.extern.slf4j.Slf4j;
+
 import java.util.ArrayList;
 import java.util.List;
-
-import static com.ibm.realtime.synth.utils.Debug.DEBUG_MASTER_SWITCH;
-import static com.ibm.realtime.synth.utils.Debug.debug;
 
 /**
  * The maintenance thread is a low-priority thread that calls in regular
@@ -38,6 +37,7 @@ import static com.ibm.realtime.synth.utils.Debug.debug;
  * @author florian
  * 
  */
+@Slf4j
 public class MaintenanceThread implements Runnable {
 	public static boolean DEBUG_MAINTENANCE = false;
 	
@@ -95,12 +95,10 @@ public class MaintenanceThread implements Runnable {
 		thread.setDaemon(true);
 		thread.start();
 		stopped = false;
-		if (DEBUG_MASTER_SWITCH) {
-			if (masterClock == null) {
-				if (adjustableClocks.size() > 0) {
-					debug("MaintenanceThread: synchronizeClocks called, and adjustableClocks "
-							+ "are registered, but master clock is not set!");
-				}
+		if (masterClock == null) {
+			if (adjustableClocks.size() > 0) {
+				log.debug("MaintenanceThread: synchronizeClocks called, and adjustableClocks "
+						+ "are registered, but master clock is not set!");
 			}
 		}
 	}
@@ -207,7 +205,7 @@ public class MaintenanceThread implements Runnable {
 					boolean closed = ((aac instanceof MidiIn) && !((MidiIn) aac).isOpen());
 					
 					if (!closed) {
-						debug("Mainten.synchClocks(" + aac + "): "
+						log.debug("Mainten.synchClocks(" + aac + "): "
 								+ "master="+ masterTime
 								+ " slave=" + aacTime
 								//+ " slaveOrig=" + aacTime.subtract(aac.getTimeOffset())
@@ -262,7 +260,7 @@ public class MaintenanceThread implements Runnable {
 					doServices();
 					waitService = serviceIntervalMillis;
 				} catch (Exception e) {
-					debug(e);
+					log.debug(String.valueOf(e));
 				}
 			}
 			if (waitSynchro <= 0) {
@@ -270,7 +268,7 @@ public class MaintenanceThread implements Runnable {
 				try {
 					synchronizeClocks(false);
 				} catch (Exception e) {
-					debug(e);
+					log.debug(String.valueOf(e));
 				}
 			}
 		}

@@ -27,6 +27,7 @@ package com.ibm.realtime.synth.modules;
 
 import com.ibm.realtime.synth.engine.MidiEvent;
 import com.ibm.realtime.synth.engine.MidiIn;
+import lombok.extern.slf4j.Slf4j;
 
 import javax.sound.midi.MidiMessage;
 import javax.sound.midi.Receiver;
@@ -34,9 +35,7 @@ import javax.sound.midi.ShortMessage;
 import java.util.ArrayList;
 import java.util.List;
 
-import static com.ibm.realtime.synth.utils.Debug.debug;
-import static com.ibm.realtime.synth.utils.Debug.hexString;
-
+@Slf4j
 public class JavaSoundReceiver implements Receiver {
 
 	public static boolean DEBUG_JSMIDIIN_IO = false;
@@ -100,12 +99,6 @@ public class JavaSoundReceiver implements Receiver {
 	 */
 	private void dispatchMessage(long microTime, int status, int data1,
 			int data2) {
-		if (DEBUG_JSMIDIIN_IO) {
-			debug("JavaSoundReceiver: time="+(microTime/1000)+"ms "
-					+hexString(status, 2)+" "
-					+hexString(data1, 2)+" "
-					+hexString(data2, 2));
-		}
 		
 		int channel;
 		if (status < 0xF0) {
@@ -144,7 +137,7 @@ public class JavaSoundReceiver implements Receiver {
 	 */
 	private void dispatchMessage(long microTime, byte[] msg) {
 		if (DEBUG_JSMIDIIN_IO) {
-			debug("JavaSoundReceiver: time="+(microTime/1000)+"ms "
+			log.debug("JavaSoundReceiver: time="+(microTime/1000)+"ms "
 					+" long msg, length="+msg.length);
 		}
 		long nanoTime;

@@ -25,7 +25,7 @@
  */
 package com.ibm.realtime.synth.engine;
 
-import static com.ibm.realtime.synth.utils.Debug.debug;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * All parameters of a MIDI channel.
@@ -33,7 +33,9 @@ import static com.ibm.realtime.synth.utils.Debug.debug;
  * @author florian
  *
  */
+@Slf4j
 public class MidiChannel {
+
 	public static boolean DEBUG_MIDICHANNEL = false;
 
 	public final static int BANK_SELECT_MSB = 0;
@@ -254,7 +256,7 @@ public class MidiChannel {
 	public void setPitchWheel(int msb, int lsb) {
 		this.pitchWheel = ((msb << 7) | (lsb & 0x7F)) - 8192;
 		if (DEBUG_MIDICHANNEL) {
-			debug("set pitch to " + pitchWheel + " = "
+			log.debug("set pitch to " + pitchWheel + " = "
 					+ getNormalizedPitchWheel());
 		}
 	}

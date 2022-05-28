@@ -25,11 +25,13 @@
  */
 package com.ibm.realtime.synth.engine;
 
+import lombok.extern.slf4j.Slf4j;
+
 import java.util.ArrayList;
 import java.util.List;
 
 import static com.ibm.realtime.synth.utils.AudioUtils.*;
-import static com.ibm.realtime.synth.utils.Debug.debug;
+
 
 /**
  * The AudioPullThread reads data from an AudioInput and writes it to an
@@ -39,6 +41,7 @@ import static com.ibm.realtime.synth.utils.Debug.debug;
  * 
  * @author florian
  */
+@Slf4j
 public class AudioPullThread implements Runnable, AudioClock {
 
 	public static boolean DEBUG_PULLTHREAD = false;
@@ -302,7 +305,7 @@ public class AudioPullThread implements Runnable, AudioClock {
 				sink.setTimeOffset(oldOffset.add(adjustTime));
 
 				if (DEBUG_PULLTHREAD) {
-					debug("AudioPullThread: synchronization reset: sink is "
+					log.debug("AudioPullThread: synchronization reset: sink is "
 							+ (samples - sinkSamplesTime)
 							+ " samples off, adjusting its time offset by "
 							+ adjust + " samples. OldOffset="
@@ -331,7 +334,7 @@ public class AudioPullThread implements Runnable, AudioClock {
 				sink.setTimeOffset(oldOffset.add(adjustTime));
 
 				if (DEBUG_PULLTHREAD) {
-					debug("AudioPullThread: sink is lagging "
+					log.debug("AudioPullThread: sink is lagging "
 							+ (samples - sinkSamplesTime - bufferSampleCount)
 							+ " samples, adjusting its time offset by "
 							+ adjust + " samples. OldOffset="
@@ -352,7 +355,7 @@ public class AudioPullThread implements Runnable, AudioClock {
 				AudioTime adjustTime = new AudioTime(adjust,
 						sink.getSampleRate());
 				if (DEBUG_PULLTHREAD) {
-					debug("AudioPullThread: sink is "
+					log.debug("AudioPullThread: sink is "
 							+ (sinkSamplesTime - samples)
 							+ " samples ahead, adjusting it by " + adjust
 							+ " samples.");
@@ -371,7 +374,7 @@ public class AudioPullThread implements Runnable, AudioClock {
 		// wait for sink to be ready
 		while (sink == null || !sink.isOpen()) {
 			if (DEBUG_PULLTHREAD) {
-				debug("AudioPullThread: wait for soundsink to be opened...");
+				log.debug("AudioPullThread: wait for soundsink to be opened...");
 			}
 			try {
 				Thread.sleep(5);
@@ -382,7 +385,7 @@ public class AudioPullThread implements Runnable, AudioClock {
 			}
 			if (sink != null && sink.isOpen()) {
 				if (DEBUG_PULLTHREAD) {
-					debug("AudioPullThread: soundsink is ready to be written to.");
+					log.debug("AudioPullThread: soundsink is ready to be written to.");
 				}
 				if (bufferSampleCount > 0) {
 					synchronizeSink(samples, bufferSampleCount, true);
@@ -397,7 +400,7 @@ public class AudioPullThread implements Runnable, AudioClock {
 	 */
 	public void run() {
 		if (DEBUG_PULLTHREAD) {
-			debug("AudioPullThread: in soundcard writing thread");
+			log.debug("AudioPullThread: in soundcard writing thread");
 		}
 		inThread = true;
 		try {
@@ -435,7 +438,7 @@ public class AudioPullThread implements Runnable, AudioClock {
 						bufferSampleCount = alignSinkBufferSizeToSliceTime(
 								localBufferSampleCount, sliceSampleCount);
 						if (DEBUG_PULLTHREAD) {
-							debug("AudioPullThread: Slice size: "
+							log.debug("AudioPullThread: Slice size: "
 									+ ((Math.round(localSliceTime * 10000.0)) / 10.0)
 									+ "ms = "
 									+ sliceSampleCount
@@ -466,7 +469,7 @@ public class AudioPullThread implements Runnable, AudioClock {
 					// wait for input to become ready
 					while (input == null) {
 						if (DEBUG_PULLTHREAD) {
-							debug("AudioPullThread: wait for input to be opened...");
+							log.debug("AudioPullThread: wait for input to be opened...");
 						}
 						try {
 							Thread.sleep(10);
@@ -477,7 +480,7 @@ public class AudioPullThread implements Runnable, AudioClock {
 						}
 						if (DEBUG_PULLTHREAD) {
 							if (input != null) {
-								debug("AudioPullThread: input is ready to be read from.");
+								log.debug("AudioPullThread: input is ready to be read from.");
 							}
 						}
 					}
@@ -541,14 +544,14 @@ public class AudioPullThread implements Runnable, AudioClock {
 						}
 					}
 				} catch (Throwable t) {
-					debug(t);
+					log.debug(String.valueOf(t));
 				}
 			}
 		} finally {
 			inThread = false;
 		}
 		if (DEBUG_PULLTHREAD) {
-			debug("AudioPullThread: quit soundcard writing thread");
+			log.debug("AudioPullThread: quit soundcard writing thread");
 		}
 	}
 

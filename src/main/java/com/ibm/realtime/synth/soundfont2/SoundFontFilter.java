@@ -3,10 +3,9 @@ package com.ibm.realtime.synth.soundfont2;
 import com.ibm.realtime.synth.engine.AudioBuffer;
 import com.ibm.realtime.synth.engine.MidiChannel;
 import com.ibm.realtime.synth.utils.AudioUtils;
+import lombok.extern.slf4j.Slf4j;
 
 import static com.ibm.realtime.synth.soundfont2.SoundFontUtils.cents2hertzCutoff;
-import static com.ibm.realtime.synth.utils.Debug.debug;
-import static com.ibm.realtime.synth.utils.Debug.format3;
 
 /**
  * A class implementing a low pass filter for SoundFont instruments.
@@ -18,6 +17,7 @@ import static com.ibm.realtime.synth.utils.Debug.format3;
  * @author florian
  *
  */
+@Slf4j
 public class SoundFontFilter {
 	public static boolean DEBUG_LP = false;
 	public static boolean DEBUG_LP_IO = false;
@@ -168,8 +168,8 @@ public class SoundFontFilter {
 	void setCutoffCents(int cents) {
 		this.initialCutoffCents = cents;
 		if (DEBUG_LP) {
-			debug(" Low Pass: set cutoff to "
-					+ format3(cents2hertzCutoff(initialCutoffCents)) + "Hz");
+			log.debug(" Low Pass: set cutoff to "
+					+ (cents2hertzCutoff(initialCutoffCents)) + "Hz");
 		}
 	}
 
@@ -179,8 +179,8 @@ public class SoundFontFilter {
 	void addCutoffCents(int cents) {
 		this.initialCutoffCents += cents;
 		if (DEBUG_LP) {
-			debug(" Low Pass: add " + cents + " cents to cutoff, new value: "
-					+ format3(cents2hertzCutoff(initialCutoffCents)) + "Hz");
+			log.debug(" Low Pass: add " + cents + " cents to cutoff, new value: "
+					+ (cents2hertzCutoff(initialCutoffCents)) + "Hz");
 		}
 	}
 
@@ -190,8 +190,8 @@ public class SoundFontFilter {
 	void setResonanceCB(int cB) {
 		this.initialResonanceCB = cB;
 		if (DEBUG_LP) {
-			debug(" Low Pass: set resonance to "
-					+ format3(initialResonanceCB / 10.0) + "dB");
+			log.debug(" Low Pass: set resonance to "
+					+ (initialResonanceCB / 10.0) + "dB");
 		}
 	}
 
@@ -201,9 +201,9 @@ public class SoundFontFilter {
 	void addResonanceCB(int cB) {
 		this.initialResonanceCB += cB;
 		if (DEBUG_LP) {
-			debug(" Low Pass: add " + format3(cB / 10.0)
+			log.debug(" Low Pass: add " + (cB / 10.0)
 					+ "dB to resonance, new value: "
-					+ format3(initialResonanceCB / 10.0) + "dB");
+					+ (initialResonanceCB / 10.0) + "dB");
 		}
 	}
 
@@ -214,10 +214,10 @@ public class SoundFontFilter {
 		// calculate the cut off as a factor
 		initialNormalizedCutoff = 2.0 * initialCutOffHertz / sampleRate;
 		if (DEBUG_LP) {
-			debug(" Low Pass: set sample rate to " + format3(sampleRate)
-					+ "Hz, initial cutoff=" + format3(initialCutOffHertz)
+			log.debug(" Low Pass: set sample rate to " + (sampleRate)
+					+ "Hz, initial cutoff=" + (initialCutOffHertz)
 					+ "Hz " + "normalized cutoff factor: "
-					+ format3(initialNormalizedCutoff));
+					+ (initialNormalizedCutoff));
 		}
 		lastCutoffOffset = -100000.0; // impossible value to force init
 	}
@@ -272,8 +272,8 @@ public class SoundFontFilter {
 		this.initialNormalizedResonance =
 				AudioUtils.decibel2linear(/*DB_TO_RESONANCE_SCALING * */ -resInDB);
 		if (DEBUG_LP) {
-			debug(" Low Pass: resInDB="+format3(resInDB)+" -> calculated normalized initial resonance: "
-					+ format3(initialNormalizedResonance));
+			log.debug(" Low Pass: resInDB="+(resInDB)+" -> calculated normalized initial resonance: "
+					+ (initialNormalizedResonance));
 		}
 		lastResonanceOffset = -100000.0; // impossible value to force init
 	}
@@ -325,14 +325,14 @@ public class SoundFontFilter {
 			}
 			lastCutoff = cutoff;
 			if (DEBUG_LP_IO) {
-				debug(" Low Pass: offset=" + format3(currentCutOffOffset)
+				log.debug(" Low Pass: offset=" + (currentCutOffOffset)
 						+ " semitones + controller cutoff offset="
-						+ format3(cutoffController)
+						+ (cutoffController)
 						+ " semitones -> cutoffFactor="
-						+ format3(cutoffOffsetFactor)
+						+ (cutoffOffsetFactor)
 						+ ", calculated normalized effective cutoff: "
-						+ format3(cutoff) + " -> "
-						+ format3(currentSampleRate / 2.0 * cutoff) + "Hz");
+						+ (cutoff) + " -> "
+						+ (currentSampleRate / 2.0 * cutoff) + "Hz");
 			}
 			// enabled = (cutoff < FLAT_CUTOFF);
 			enabled = true;
@@ -356,7 +356,7 @@ public class SoundFontFilter {
 
 		if (!enabled) {
 			if (DEBUG_LP_IO) {
-				debug(" Low Pass: cutoff is too high, disable lowpass filter. ");
+				log.debug(" Low Pass: cutoff is too high, disable lowpass filter. ");
 			}
 			// reset state vars to not cause a glitch when the filter is
 			// initialized next time
@@ -374,7 +374,7 @@ public class SoundFontFilter {
 			Q1 = res * 0.66 + 0.04;
 			
 			if (DEBUG_LP_IO) {
-				debug(" Recalculated: resonance="+resonance+"  res = "+res+"  Q1="+Q1);
+				log.debug(" Recalculated: resonance="+resonance+"  res = "+res+"  Q1="+Q1);
 			}
 		}
 	}

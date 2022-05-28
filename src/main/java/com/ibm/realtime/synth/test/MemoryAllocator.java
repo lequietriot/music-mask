@@ -25,7 +25,7 @@
  */
 package com.ibm.realtime.synth.test;
 
-import static com.ibm.realtime.synth.utils.Debug.*;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * A class that allows to allocate memory for simulating regular memory
@@ -33,53 +33,23 @@ import static com.ibm.realtime.synth.utils.Debug.*;
  * 
  * @author florian
  */
+@Slf4j
 public class MemoryAllocator {
 
 	/**
 	 * debugging flag
 	 */
-	public static boolean DEBUG_ALLOCATETHREAD = false;
-
-	/**
-	 * the allocation rate in bytes/second
-	 */
-	private int allocationRate = 1024;
-
-	/**
-	 * The size of each created object, in bytes
-	 */
-	private int allocateObjectSize = 64;
-
-	/**
-	 * Number of objects whose reference is kept in an array
-	 */
-	private int referenceObjectCount = 10;
+	public static boolean DEBUG_ALLOCATE_THREAD = false;
 
 	/**
 	 * The thread instance
 	 */
 	private AllocateThread thread;
-	
-	/**
-	 * total number of allocated objects
-	 */
-	private int totalAllocatedObjects = 0;
-	
-	private int currentRetention = 0;
 
 	/**
 	 * Create a disabled MemoryAllocator instance
 	 */
 	public MemoryAllocator() {
-	}
-
-	/**
-	 * trigger the thread's change() method
-	 */
-	private synchronized void change() {
-		if (thread != null) {
-			thread.change();
-		}
 	}
 
 	/**
@@ -96,8 +66,6 @@ public class MemoryAllocator {
 			} else {
 				thread.stopAllocator();
 				thread = null;
-				totalAllocatedObjects = 0;
-				currentRetention = 0;
 			}
 		}
 	}
@@ -108,72 +76,12 @@ public class MemoryAllocator {
 	public synchronized boolean isEnabled() {
 		return (thread != null);
 	}
-	
-	/**
-	 * @return the allocateObjectSize in bytes
-	 */
-	public int getAllocateObjectSize() {
-		return allocateObjectSize;
-	}
 
-	/**
-	 * @param allocateObjectSize the allocateObjectSize to set in bytes
-	 */
-	public void setAllocateObjectSize(int allocateObjectSize) {
-		this.allocateObjectSize = allocateObjectSize;
-		change();
-	}
-
-	/**
-	 * @return the allocationRate in bytes/second
-	 */
-	public int getAllocationRate() {
-		return allocationRate;
-	}
-
-	/**
-	 * @param allocationRate the allocationRate to set in bytes/second
-	 */
-	public void setAllocationRate(int allocationRate) {
-		this.allocationRate = allocationRate;
-		change();
-	}
-
-	/**
-	 * @return number of objects kept in an array
-	 */
-	public int getReferenceObjectCount() {
-		return referenceObjectCount;
-	}
-
-	/**
-	 * @param referenceObjectCount the referenceObjectCount to set
-	 */
-	public void setReferenceObjectCount(int referenceObjectCount) {
-		this.referenceObjectCount = referenceObjectCount;
-		change();
-	}
-	
 	// status
-	
-	/**
-	 * @return how many bytes currently held by the retention array
-	 */
-	public int getCurrentRetentionSize() {
-		return currentRetention;
-	}
-
-	/**
-	 * @return the total number of allocated objects
-	 */
-	public int getTotalAllocatedObjects() {
-		return totalAllocatedObjects;
-	}
-
 	/**
 	 * The actual allocator thread.
 	 */
-	private class AllocateThread extends Thread {
+	private static class AllocateThread extends Thread {
 
 		/**
 		 * The number of bytes allocated in total
@@ -226,17 +134,7 @@ public class MemoryAllocator {
 				try {
 					this.join(2000);
 				} catch (InterruptedException ie) {
-				}
-			}
-		}
-		
-		private synchronized void recalcCurrentRetention() {
-			currentRetention = 0;
-			if (allocateArray != null) {
-				for (Object o : allocateArray) {
-					if (o != null) {
-						currentRetention += ((byte[]) o).length;
-					}
+					ie.printStackTrace();
 				}
 			}
 		}
@@ -245,6 +143,7 @@ public class MemoryAllocator {
 		 * Called to re-setup the internal runtime variables
 		 */
 		public synchronized void change() {
+			int referenceObjectCount = 10;
 			if (allocateArray == null
 					|| allocateArray.length != referenceObjectCount) {
 				// create new array
@@ -254,7 +153,6 @@ public class MemoryAllocator {
 							referenceObjectCount, allocateArray.length));
 				}
 				allocateArray = newArray;
-				recalcCurrentRetention();
 			}
 			// reset the checkpoint
 			checkpointMillis = System.nanoTime() / 1000000L;
@@ -271,19 +169,14 @@ public class MemoryAllocator {
 			}
 			totalAllocated += bytes;
 			allocatedSinceCheckpoint += bytes;
-			totalAllocatedObjects++;
-			if (DEBUG_ALLOCATETHREAD) {
-				debug("AllocateThread: allocating " + bytes
+			if (DEBUG_ALLOCATE_THREAD) {
+				log.debug("AllocateThread: allocating " + bytes
 						+ " bytes at array index " + arrayIndex
 						+ ". Total allocated: "
-						+ getFriendlyByteSize(totalAllocated));
+						+ (totalAllocated));
 			}
 
 			if (allocateArray != null && arrayIndex < allocateArray.length) {
-				currentRetention += bytes;
-				if (allocateArray[arrayIndex] != null) {
-					currentRetention -= ((byte[]) allocateArray[arrayIndex]).length;
-				}
 				allocateArray[arrayIndex++] = newObject;
 			}
 		}
@@ -292,29 +185,31 @@ public class MemoryAllocator {
 		 * in a loop, allocate the objects
 		 */
 		public void run() {
-			if (DEBUG_ALLOCATETHREAD) {
-				debug("AllocateThread: start");
+			if (DEBUG_ALLOCATE_THREAD) {
+				log.debug("AllocateThread: start");
 			}
 			while (!stopped) {
 				try {
 					synchronized (this) {
 						long elapsedSinceCheckpoint = (System.nanoTime() / 1000000L)
 								- checkpointMillis;
+						int allocationRate = 1024;
 						long shouldHaveAllocated = (long) (((double) allocationRate) * (elapsedSinceCheckpoint / 1000.0));
 						// number of bytes that should be allocated now is
 						// the difference of shouldHaveAllocated and allocatedSinceCheckpoint
 						// we only allocate in chunks of allocateObjectSize
+						int allocateObjectSize = 64;
 						while ((shouldHaveAllocated - allocatedSinceCheckpoint) >= allocateObjectSize) {
 							allocate(allocateObjectSize);
 						}
 						this.wait(10);
 					}
 				} catch (Throwable t) {
-					error(t);
+					log.debug(String.valueOf(t));
 				}
 			}
-			if (DEBUG_ALLOCATETHREAD) {
-				debug("AllocateThread: stop");
+			if (DEBUG_ALLOCATE_THREAD) {
+				log.debug("AllocateThread: stop");
 			}
 		}
 

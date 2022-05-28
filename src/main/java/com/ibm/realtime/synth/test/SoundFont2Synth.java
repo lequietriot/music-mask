@@ -30,19 +30,17 @@ import com.ibm.realtime.synth.modules.*;
 import com.ibm.realtime.synth.soundfont2.SoundFontSoundbank;
 import com.ibm.realtime.synth.utils.AudioUtils;
 import com.ibm.realtime.synth.utils.MidiUtils;
+import lombok.extern.slf4j.Slf4j;
 
 import javax.sound.sampled.AudioFormat;
-import javax.sound.sampled.Mixer;
 import java.io.File;
-import java.util.List;
-
-import static com.ibm.realtime.synth.utils.Debug.*;
 
 /**
  * A console synth implementation that uses a SoundFont 2 soundbank.
  * 
  * @author florian
  */
+@Slf4j
 public class SoundFont2Synth {
 
 	public static final double DEFAULT_LATENCY = 50.0;
@@ -50,8 +48,8 @@ public class SoundFont2Synth {
 
 	// fields needed in the timeOutThread
 	private static boolean running = false;
-	private static Object runLock = new Object();
-	private static int timeOutSeconds = 0; // no timeOut
+	private static final Object runLock = new Object();
+	private static final int timeOutSeconds = 0; // no timeOut
 	private static Synthesizer synth = null;
 	private static AudioSink sink = null;
 	private static double latencyMillis = DEFAULT_LATENCY;
@@ -61,7 +59,7 @@ public class SoundFont2Synth {
 	private static SMFMidiIn smfPlayer = null;
 	private static MaintenanceThread maintenance = null;
 
-	private static MemoryAllocator memAllocator = null;
+	private static final MemoryAllocator memAllocator = null;
 
 	public static void start(String customSoundBankPath, byte[] midiData, int musicVolume) throws Exception {
 
@@ -89,30 +87,23 @@ public class SoundFont2Synth {
 		boolean preload = true;
 
 		// verify parameters
-
 		File sbFile = new File(soundbankFile);
 		if (sbFile.isDirectory() || !sbFile.exists()) {
-			out("Invalid soundfont file: " + sbFile);
-			out("Please specify an existing soundbank file with the -sb command line parameter.");
-			out("");
-			printUsageAndExit();
+			log.info("Invalid soundfont file: " + sbFile);
+			log.info("");
 		}
 		File wavFile = null;
 		byte[] mFile = null;
 		if (midiData != null) {
 			mFile = midiData;
 			if (mFile == null) {
-				out("Invalid MIDI input file: " + mFile);
-				out("Please specify an existing MIDI file with the -if command line parameter.");
-				out("");
-				printUsageAndExit();
+				log.info("Invalid MIDI input file: " + mFile);
 			}
 		}
 		if (((audioDev >= -1 ? 1 : 0) + (directAudioDev != "" ? 1 : 0) + (eventronAudioDev != "" ? 1
 				: 0)) > 1) {
-			out("Error: can only select one audio device!");
-			out("");
-			printUsageAndExit();
+			log.info("Error: can only select one audio device!");
+			log.info("");
 		}
 		// use Java Sound's default device if neither -a nor -da is specified
 		if (audioDev == -2 && directAudioDev == "" && eventronAudioDev == "") {
@@ -120,11 +111,11 @@ public class SoundFont2Synth {
 		}
 		// non-interactive only possible with duration
 		if (!interactive && timeOutSeconds == 0) {
-			error("Refuse to run in non-interactive mode without timeout.");
+			log.debug("Refuse to run in non-interactive mode without timeout.");
 			interactive = true;
 		}
 		if (lowlatencyMode && latencyMillis > 2.0) {
-			debug("WARNING: using low latency mode with larger buffer size will increase jitter!");
+			log.debug("WARNING: using low latency mode with larger buffer size will increase jitter!");
 		}
 
 		AudioFormat format = new AudioFormat((float) sampleRate, bitsPerSample,
@@ -135,14 +126,11 @@ public class SoundFont2Synth {
 		JavaSoundMidiIn[] midis = null;
 
 		// STARTUP ENGINE
-
 		try {
-			debugNoNewLine("Loading soundbank " + sbFile + "...");
-			SoundFontSoundbank soundbank = new SoundFontSoundbank(sbFile);
-			debug(soundbank.getName());
+			log.debug("Loading SoundFont " + sbFile.getName() + "...");
+			SoundFontSoundbank soundFont = new SoundFontSoundbank(sbFile);
 
 			// set up mixer
-			//debug("creating Mixer...");
 			AudioMixer mixer = new AudioMixer();
 
 			// slice time should always be <= latency
@@ -150,7 +138,6 @@ public class SoundFont2Synth {
 				sliceTimeMillis = latencyMillis;
 			}
 			// create the pull thread
-			// debug("creating AudioPullThread...");
 			pullThread = new AudioPullThread();
 			pullThread.setSliceTimeMillis(sliceTimeMillis);
 			pullThread.setInput(mixer);
@@ -159,36 +146,36 @@ public class SoundFont2Synth {
 			int bufferSizeSamples = pullThread.getPreferredSinkBufferSizeSamples(
 					latencyMillis, format.getSampleRate());
 			if (audioDev >= -1) {
-				debugNoNewLine("creating JavaSoundSink...");
+				log.debug("creating JavaSoundSink...");
 				JavaSoundSink jsSink = new JavaSoundSink();
 				// open the sink
 				jsSink.open(audioDev, format, bufferSizeSamples);
-				debug(jsSink.getName());
+				log.debug(jsSink.getName());
 				sink = jsSink;
 				format = jsSink.getFormat();
 			} else if (directAudioDev != "") {
-				debug("creating DirectAudioSink: " + directAudioDev);
+				log.debug("creating DirectAudioSink: " + directAudioDev);
 				DirectAudioSink daSink = new DirectAudioSink();
 				daSink.open(directAudioDev, format, bufferSizeSamples);
 				sink = daSink;
 				format = daSink.getFormat();
-				debug("- slice: "
+				log.debug("- slice: "
 						+ pullThread.getSliceTimeSamples(format.getSampleRate())
 						+ " samples = "
-						+ format3(pullThread.getSliceTime() * 1000.0)
+						+ (pullThread.getSliceTime() * 1000.0)
 						+ "ms, period: "
 						+ daSink.getPeriodSizeSamples() + " samples = "
-						+ format3(daSink.getPeriodTimeNanos() / 1000000.0)
+						+ (daSink.getPeriodTimeNanos() / 1000000.0)
 						+ "ms, ALSA buffer: "
 						+ daSink.getALSABufferSizeSamples() + " samples = "
-						+ format3(daSink.getALSABufferTimeNanos() / 1000000.0)
+						+ (daSink.getALSABufferTimeNanos() / 1000000.0)
 						+ "ms");
 
 			}
-			debug("- audio format: " + format.getChannels() + " channels, "
+			log.debug("- audio format: " + format.getChannels() + " channels, "
 					+ format.getSampleSizeInBits() + " bits, "
 					+ format.getFrameSize() + " bytes per frame, "
-					+ format1(format.getSampleRate()) + " Hz, "
+					+ (format.getSampleRate()) + " Hz, "
 					+ (format.isBigEndian() ? "big endian" : "little endian"));
 
 			// use effective latency
@@ -196,13 +183,13 @@ public class SoundFont2Synth {
 					sampleRate) / 1000000.0;
 			pullThread.setSink(sink);
 			// set up Synthesizer
-			debugNoNewLine("creating Synthesizer: ");
-			synth = new Synthesizer(soundbank, mixer);
+			log.debug("creating Synthesizer: ");
+			synth = new Synthesizer(soundFont, mixer);
 			synth.setFixedDelayNanos((long) (((2.0 * latencyMillis)) * 1000000.0));
 			synth.setMasterClock(sink);
 			synth.getParams().setMasterTuning(443);
 			synth.setNoteDispatcherMode(noteDispatcherMode);
-			debugNoNewLine(format1(synth.getParams().getMasterTuning())
+			log.debug((synth.getParams().getMasterTuning())
 					+ "Hz tuning, ");
 			if (benchmarkMode) {
 				synth.setBenchmarkMode(true);
@@ -216,57 +203,57 @@ public class SoundFont2Synth {
 			synth.getParams().setMasterVolume(
 					AudioUtils.decibel2linear(volumeDB));
 			if (volumeDB != 0.0) {
-				debugNoNewLine("volume: "
-						+ format1(AudioUtils.linear2decibel(synth.getParams().getMasterVolume()))
+				log.debug("volume: "
+						+ (AudioUtils.linear2decibel(synth.getParams().getMasterVolume()))
 						+ "dB (linear: "
-						+ format3(synth.getParams().getMasterVolume()) + "), ");
+						+ (synth.getParams().getMasterVolume()) + "), ");
 			}
 			pullThread.addListener(synth);
 			if (threadCount >= 0) {
 				synth.setRenderThreadCount(threadCount);
 			}
 			if (preload) {
-				debugNoNewLine("preloading, ");
+				log.debug("preloading, ");
 				synth.preLoad();
 			}
 			setVolume(musicVolume / 100.0);
 			synth.start();
 			if (synth.getRenderThreadCount() > 1) {
-				debug("" + synth.getRenderThreadCount()
+				log.debug("" + synth.getRenderThreadCount()
 						+ " render threads");
 			} else {
-				debug("rendering from mixer thread");
+				log.debug("rendering from mixer thread");
 			}
 
 			// set up wave output
 			if (wavFile != null) {
-				debug("setting up wave file output to file "+wavFile);
+				log.debug("setting up wave file output to file "+wavFile);
 				waveSink = new DiskWriterSink();
 				waveSink.open(wavFile, format);
 				pullThread.setSlaveSink(waveSink);
 			}
 			
-			debugNoNewLine("MIDI ports:");
+			log.debug("MIDI ports:");
 
 			// open Java Sound MIDI ports?
 			midis = new JavaSoundMidiIn[midiDevCount];
 			midiDevCount = 0;
 			for (int i = 0; i < midis.length; i++) {
 				if (midiDevs[i] < JavaSoundMidiIn.getMidiDeviceCount()) {
-					debugNoNewLine(" Java Sound ");
+					log.debug(" Java Sound ");
 					JavaSoundMidiIn midi = new JavaSoundMidiIn(i);
 					midis[midiDevCount] = midi;
 					midi.addListener(synth);
 					try {
 						midi.open(midiDevs[i]);
-						out(midi.getName());
+						log.info(midi.getName());
 						if (lowlatencyMode) {
 							midi.setTimestamping(false);
 						}
 						midiDevCount++;
 					} catch (Exception e) {
-						out("ERROR:");
-						out(" no MIDI: " + e.toString());
+						log.info("ERROR:");
+						log.info(" no MIDI: " + e.toString());
 					}
 				}
 			}
@@ -274,7 +261,7 @@ public class SoundFont2Synth {
 			dmidis = new DirectMidiIn[dmidiDevCount];
 			dmidiDevCount = 0;
 			for (int i = 0; i < dmidis.length; i++) {
-				debugNoNewLine(" Direct " + dmidiDevs[i]);
+				log.debug(" Direct " + dmidiDevs[i]);
 				DirectMidiIn dmidi = new DirectMidiIn(i);
 				dmidis[dmidiDevCount] = dmidi;
 				dmidi.addListener(synth);
@@ -285,16 +272,16 @@ public class SoundFont2Synth {
 					}
 					dmidiDevCount++;
 				} catch (Exception e) {
-					out("ERROR:");
-					out(" no MIDI: " + e.toString());
+					log.info("ERROR:");
+					log.info(" no MIDI: " + e.toString());
 				}
 			}
 
 			if (midiDevCount + dmidiDevCount == 0) {
-				debug("none");
+				log.debug("none");
 			} else {
 				// new line
-				debug("");
+				log.debug("");
 			}
 
 			// create the maintenance thread
@@ -314,18 +301,18 @@ public class SoundFont2Synth {
 				if (useJavaSoundMidiPlayback) {
 					playMidiFileWithJavaSound(mFile);
 				} else {
-					outNoNewLine("Playing MIDI File");
+					log.info("Playing MIDI File");
 					SMFPusher pusher = new SMFPusher();
 					pusher.open(mFile);
 					int events = pusher.pushToSynth(synth);
-					out(", duration:" + format3(pusher.getDurationInSeconds())
+					log.info(", duration:" + (pusher.getDurationInSeconds())
 							+ "s, " + events + " notes.");
 				}
 			}
 
 			// start memory allocator
 			if (memAllocator != null) {
-				debug("Starting memory allocator");
+				log.debug("Starting memory allocator");
 				memAllocator.setEnabled(true);
 			}
 			// start the pull thread -- from now on, the mixer is polled
@@ -336,12 +323,12 @@ public class SoundFont2Synth {
 
 			if (ThreadFactory.hasRealtimeThread()) {
 				if (ThreadFactory.couldSetRealtimeThreadPriority()) {
-					debug("Using realtime threads with high priority");
+					log.debug("Using realtime threads with high priority");
 				} else {
-					debug("Using realtime threads with default priority");
+					log.debug("Using realtime threads with default priority");
 				}
 			} else {
-				debug("Realtime threads are not enabled.");
+				log.debug("Realtime threads are not enabled.");
 			}
 
 			if (smfPlayer != null) {
@@ -366,16 +353,6 @@ public class SoundFont2Synth {
 				t.setDaemon(true);
 				t.start();
 			}
-
-			if (timeOutSeconds > 0) {
-				out("This program will exit after " + timeOutSeconds
-						+ " seconds.");
-			}
-			if (interactive) {
-				out("Press ENTER or SPACE+ENTER to play a random note");
-				out("p+ENTER:Panic                    q+ENTER to quit");
-			}
-
 			if (timeOutSeconds == 0) {
 				interactiveKeyHandling();
 			} else {
@@ -388,19 +365,18 @@ public class SoundFont2Synth {
 						if (timeOutSeconds > 0) {
 							long elapsedSeconds = (System.nanoTime() - startTime) / 1000000000L;
 							if (elapsedSeconds >= timeOutSeconds) {
-								debug("Timeout reached. Stopping...");
+								log.debug("Timeout reached. Stopping...");
 								running = false;
 								break;
 							}
 						}
 					} catch (Exception e) {
-						error(e);
+						log.debug(String.valueOf(e));
 					}
 				}
 			}
 		} catch (Throwable t) {
-			error(t);
-			errorOccured = true;
+			log.debug(String.valueOf(t));
 		}
 
 		// clean-up
@@ -412,7 +388,7 @@ public class SoundFont2Synth {
 			try {
 				smfPlayer.close();
 			} catch (Exception e) {
-				error(e);
+				log.debug(String.valueOf(e));
 			}
 		}
 		if (waveSink != null) {
@@ -423,7 +399,7 @@ public class SoundFont2Synth {
 		}
 		if (pullThread != null) {
 			pullThread.stop();
-			out("Resynchronizations of audio device: " + pullThread.getResynchCounter());
+			log.info("Resynchronizations of audio device: " + pullThread.getResynchCounter());
 		}
 		for (int i = 0; i < midiDevCount; i++) {
 			if (midis[i] != null) {
@@ -441,13 +417,12 @@ public class SoundFont2Synth {
 		if (sink != null) {
 			sink.close();
 			if (sink instanceof DirectAudioSink) {
-				out("Underruns of the audio device     : " + ((DirectAudioSink) sink).getUnderrunCount());
+				log.info("Underruns of the audio device     : " + ((DirectAudioSink) sink).getUnderRunCount());
 			}
 		}
 
 		// done
-		out("SoundFont2Synth exit.");
-		System.exit(errorOccured ? 1 : 0);
+		log.info("Done.");
 	}
 
 	private static void interactiveKeyHandling() {
@@ -457,7 +432,6 @@ public class SoundFont2Synth {
 			while (true) {
 				int c = (int) ((char) System.in.read());
 
-				// out(""+c);
 				if (ignoreNext > 0 && (c == 10 || c == 13)) {
 					ignoreNext--;
 					continue;
@@ -474,11 +448,11 @@ public class SoundFont2Synth {
 					note = -1;
 				}
 				if (c == 'q') {
-					out("stopping...");
+					log.info("stopping...");
 					break;
 				}
 				if (c == 'p') {
-					out("Reset.");
+					log.info("Reset.");
 					synth.reset();
 				}
 				if (c == 32 || c == 10 || c == 13) {
@@ -487,14 +461,14 @@ public class SoundFont2Synth {
 						note = ((int) (Math.random() * 40)) + 40;
 					} while (!MidiUtils.isWhiteKey(note));
 					int vel = ((int) (Math.random() * 40)) + 87;
-					out("Playing: NoteOn " + note + "," + vel);
+					log.info("Playing: NoteOn " + note + "," + vel);
 					synth.midiInReceived(new MidiEvent(null,
 							sink.getAudioTime(), 0, 0x90, note, vel));
 					if (c != 32) ignoreNext++;
 				}
 			}
 		} catch (Exception e) {
-			error(e);
+			log.debug(String.valueOf(e));
 		}
 		running = false;
 		synchronized (runLock) {
@@ -506,117 +480,19 @@ public class SoundFont2Synth {
 		try {
 			smfPlayer = new SMFMidiIn();
 			smfPlayer.open(file);
-			// smfPlayer.setStopListener(this);
 
-			// smfPlayer.setDeviceIndex(MIDI_DEV_COUNT); // one after the real
 			// MIDI devices
 			smfPlayer.addListener(synth);
 			maintenance.addAdjustableClock(smfPlayer);
 
 			// make sure the clocks are synchronized
 			maintenance.synchronizeClocks(true);
-			debug("MIDI file playing with Java Sound: " + file);
+			log.debug("MIDI file playing with Java Sound: " + file);
 
 		} catch (Exception e) {
-			error("Cannot load MIDI file: " + file);
-			error(e);
+			log.debug("Cannot load MIDI file: " + file);
+			log.debug(String.valueOf(e));
 		}
-	}
-
-	@SuppressWarnings("unchecked")
-	private static void printUsageAndExit() {
-		DirectAudioSink.isAvailable();
-		List infos = JavaSoundMidiIn.getDeviceList();
-		List<DirectMidiInDeviceEntry> dminfos = DirectMidiIn.getDeviceEntryList();
-		List<Mixer.Info> ainfos = JavaSoundSink.getDeviceList();
-		List<DirectAudioSinkDeviceEntry> directSinks = DirectAudioSink.getDeviceEntryList();
-		out("Usage:");
-		out("java SoundFont2Synth [options]");
-		out("Options:");
-		out("-h              : display this help message");
-		out("-sb [.sf2 file] : soundbank in .sf2 format to be used");
-		out("-l  [millis]    : latency: buffer size in millis (default: "
-				+ (((int) DEFAULT_LATENCY * 10) / 10.0) + ")");
-
-		out("-if [.mid file] : MIDI file to be played");
-		out("-of [.wav file] : write output to .wav file");
-		if (DirectMidiIn.isAvailable()) {
-			out("-dm [dev name]  : specify Direct MIDI port input by name, e.g.:");
-			if (dminfos.size() > 0) {
-				for (int i = 0; i < dminfos.size(); i++) {
-					out("           " + dminfos.get(i).getFullInfoString());
-				}
-			} else {
-				out("            [no Direct MIDI IN devices available]");
-			}
-		}
-		out("-m  [MIDI dev#] : specify Java Sound MIDI port input by number:");
-		if (infos.size() > 0) {
-			for (int i = 0; i < infos.size(); i++) {
-				out("           " + i + ": " + infos.get(i));
-			}
-		} else {
-			out("            [no Java Sound MIDI IN devices available]");
-		}
-		out("-a  [audio dev#]: specify Java Sound audio output device by number:");
-		if (ainfos.size() > 0) {
-			for (int i = 0; i < ainfos.size(); i++) {
-				String add = "";
-				if (JavaSoundSink.isJavaSoundEngine(ainfos.get(i))) {
-					add = " [NOT RECOMMENDED]";
-				}
-				out("           " + i + ": " + ainfos.get(i) + add);
-			}
-		} else {
-			out("           [no Java Sound audio output devices available]");
-		}
-		if (DirectAudioSink.isAvailable()) {
-			out("-da [dev name]  : specify direct audio output device by name, e.g.:");
-			for (int i = 0; i < directSinks.size(); i++) {
-				out("           " + directSinks.get(i).getFullInfoString());
-			}
-			if (directSinks.size() == 0) {
-				out("            [no direct audio output devices available]");
-			}
-		}
-		if (DirectAudioSink.isAvailable()) {
-			out("NOTE: -da, -a, -ea cannot be used simultaneously.");
-		}
-		out("Advanced options:");
-		out("-s  [millis]    : slice time: quantum time in millis (default: "
-				+ (((int) DEFAULT_SLICE_TIME * 10) / 10.0) + ")");
-		out("-c  [channels]  : number of output channels, default 2 (stereo)");
-		out("-sr [Hz]        : sample rate in Hz (default 44100.0 Hz)");
-		out("-b  [bits]      : sample resolution in bits (default: 16 bits)");
-		out("-vol <dB>       : set volume to <dB> deciBels -100...0...inf (default: 0dB)");
-		out("-t  [count]     : use [count] number of threads (default: "
-				+ AsynchronousRenderer.getDefaultThreadCount() + " theads)");
-		out("-trace <dest>   : metronome tracing, <dest> is either filename or port");
-		out("-w <sec>        : if playing a MIDI file, wait <sec> seconds before starting");
-		out("-duration <sec> : quit this program after <sec> seconds");
-		out("-ni             : non-interactive, only valid with duration");
-		out("-noPreload      : do not preload the synth rendering classes");
-		out("-nd:{async|sync|auto}: mode for note dispatcher (default: auto)");
-
-		out("-allocator <Rate> <Size> <Retention> : run an allocator thread with");
-		out("                  the goal of causing GC activity.");
-		out("                  Rate: effective allocation rate in bytes/second");
-		out("                  Size: size of individual objects, in bytes");
-		out("                  Retention: number of objects to retain in memory");
-		
-		out("-Xbenchmark     : benchmark mode");
-		out("-Xlowlatency    : do not schedule incoming MIDI events. Will increase jitter, ");
-		out("                  so only recommended with very small buffer sizes");
-		out("-XXnoReuseObjects : wasteful use of buffer objects");
-		out("-XnoJavaSoundSequencer : use Harmonicon's scheduler for MIDI file playback");
-		out("                         instead of Java Sound");
-		if (!DirectMidiIn.isAvailable()) {
-			out("[direct MIDI input library not available]");
-		}
-		if (!DirectAudioSink.isAvailable()) {
-			out("[direct audio sink library not available]");
-		}
-		System.exit(1);
 	}
 
 	public static double getVolume() {
@@ -629,7 +505,6 @@ public class SoundFont2Synth {
 	public static void setVolume(double volume) {
 		if (synth != null) {
 			synth.getParams().setMasterVolume(volume);
-			System.out.println("set volume to " + volume);
 		}
 	}
 
@@ -639,7 +514,7 @@ public class SoundFont2Synth {
 				if (synth != null) {
 					double volume = synth.getParams().getMasterVolume();
 					while (volume != 0.0) {
-						volume = -0.05;
+						volume = -0.01;
 						Thread.sleep(10);
 					}
 				}
@@ -650,10 +525,14 @@ public class SoundFont2Synth {
 	}
 
 	public static void stop() {
-		smfPlayer.stop();
+		if (smfPlayer != null) {
+			smfPlayer.stop();
+		}
 	}
 
 	public static void close() {
-		smfPlayer.close();
+		if (smfPlayer != null) {
+			smfPlayer.close();
+		}
 	}
 }

@@ -26,10 +26,11 @@
 package com.ibm.realtime.synth.engine;
 
 import com.ibm.realtime.synth.engine.Synthesizer.Params;
+import lombok.extern.slf4j.Slf4j;
 
 import static com.ibm.realtime.synth.utils.AudioUtils.getSamplerateFactorFromRelativeNote;
 import static com.ibm.realtime.synth.utils.AudioUtils.nanos2samples;
-import static com.ibm.realtime.synth.utils.Debug.debug;
+
 
 /**
  * A class for feeding the mixer with a single played note.
@@ -59,6 +60,7 @@ import static com.ibm.realtime.synth.utils.Debug.debug;
  * 
  * @author florian
  */
+@Slf4j
 public class NoteInput implements AudioInput, Renderable {
 
 	public static boolean DEBUG_NOTEINPUT = false;
@@ -448,13 +450,13 @@ public class NoteInput implements AudioInput, Renderable {
 				// *this* buffer
 				if (outSampleOffset < 0) {
 					if (DEBUG_NOTEINPUT) {
-						debug("NoteInput: time=" + time.getMicroTime()
+						log.debug("NoteInput: time=" + time.getMicroTime()
 						+ "us, insertion time=" + (insertionTime)
 						+ "us, offset=" + (nanoOffset / 1000L)
 						+ "us, outSampleOffset=" + outSampleOffset
 						+ "samples, count=" + count
 						+ "samples");
-						debug("   -> rendering start of note comes "
+						log.debug("   -> rendering start of note comes "
 								+ (outSampleOffset * -1) + " samples too late!");
 					}
 					// rendering comes too late! insert at beginning of buffer
@@ -462,7 +464,7 @@ public class NoteInput implements AudioInput, Renderable {
 				} else {
 					count -= outSampleOffset;
 					if (DEBUG_NOTEINPUT_IO) {
-						debug("NoteInput: Insert Note at time "+time+" with offset "+outSampleOffset+" samples."); 
+						log.debug("NoteInput: Insert Note at time "+time+" with offset "+outSampleOffset+" samples.");
 					}
 				}
 				insertionTime = 0;

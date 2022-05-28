@@ -25,7 +25,8 @@
  */
 package com.ibm.realtime.synth.engine;
 
-import static com.ibm.realtime.synth.utils.Debug.debug;
+
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * A class to maintain a pool of threads which continously render a set of
@@ -34,14 +35,15 @@ import static com.ibm.realtime.synth.utils.Debug.debug;
  * 
  * @author florian
  */
+@Slf4j
 public class AsynchronousRenderer {
 
-	public static boolean DEBUG_ASYNCH_RENDERER = false;
+	public static boolean DEBUG_ASYNC_RENDERER = false;
 
 	/**
 	 * Priority of the render thread -- on a scale from 0 to 10.
 	 */
-	private static final int RENDERTHREAD_PRIORITY = AudioPullThread.PULLTHREAD_PRIORITY;
+	private static final int RENDER_THREAD_PRIORITY = AudioPullThread.PULLTHREAD_PRIORITY;
 
 	/**
 	 * Flag: if <code>true</code>, each render thread is assigned a pre-set
@@ -96,17 +98,10 @@ public class AsynchronousRenderer {
 	private volatile AudioTime renderTime;
 
 	/**
-	 * The array of Renderables that contain the most recent list of objects to
+	 * The array of Renderable that contain the most recent list of objects to
 	 * be rendered. Must never be null!
 	 */
-	private volatile Renderable[] renderables = new Renderable[0];
-
-	/**
-	 * Default constructor: by default, assigns defaultThreadCount threads.
-	 */
-	public AsynchronousRenderer() {
-		threadCount = defaultThreadCount;
-	}
+	private volatile Renderable[] renderableArray = new Renderable[0];
 
 	/**
 	 * Create an AsynchronousRenderer with the specified number of threads.
@@ -205,7 +200,7 @@ public class AsynchronousRenderer {
 			}
 			RenderingThread[] newThreads = new RenderingThread[threadCount];
 			System.arraycopy(threads, 0, newThreads, 0,
-					threadCount < threads.length ? threadCount : threads.length);
+					Math.min(threadCount, threads.length));
 			threads = newThreads;
 		}
 		// here we can be sure that threads.length == threadCount
@@ -223,7 +218,7 @@ public class AsynchronousRenderer {
 	 */
 	public synchronized void dispatch(AudioTime time, Renderable[] renderables) {
 		this.renderTime = time;
-		this.renderables = renderables;
+		this.renderableArray = renderables;
 		if (PARTITION_RENDERABLES) {
 			int threadCount = threads.length;
 			for (int i = 0; i < threadCount; i++) {
@@ -242,19 +237,9 @@ public class AsynchronousRenderer {
 	 * notifyAll() needs to be used.
 	 */
 	private class RenderingThread implements Runnable {
+
 		private boolean running;
 		private volatile boolean doStop;
-
-		/**
-		 * For performance metrics, how many buffers were actually rendered.
-		 */
-		private int renderCount;
-
-		/**
-		 * For performance metrics, how many buffers were tried to be rendered,
-		 * but were already rendered
-		 */
-		private int renderMissCount;
 
 		/**
 		 * For partitioned rendering: the first element in renderables that is
@@ -267,7 +252,7 @@ public class AsynchronousRenderer {
 		 */
 		private int partitionInc;
 		
-		private String name;
+		private final String name;
 
 		/**
 		 * Create a rendering thread with the thread number threadNum.
@@ -277,10 +262,8 @@ public class AsynchronousRenderer {
 		public RenderingThread(int threadNum) {
 			running = true;
 			doStop = false;
-			renderCount = 0;
-			renderMissCount = 0;
 			name = "Rendering thread " + threadNum;
-			ThreadFactory.createThread(this, name, RENDERTHREAD_PRIORITY);
+			ThreadFactory.createThread(this, name, RENDER_THREAD_PRIORITY);
 		}
 
 		/**
@@ -337,7 +320,7 @@ public class AsynchronousRenderer {
 		 * changes of the array instance. Access to the renderables array is
 		 * synchronized by the array instance.
 		 */
-		private final void render(AudioTime time, Renderable[] rs) {
+		private void render(AudioTime time, Renderable[] rs) {
 			int count = rs.length;
 			for (int i = 0; i < count; i++) {
 				if (time != renderTime) {
@@ -345,23 +328,17 @@ public class AsynchronousRenderer {
 				}
 				// get the next Renderable
 				Renderable r;
-				synchronized (rs) {
-					r = rs[i];
-					if (r != null) {
-						rs[i] = null;
-					} else {
-						// this Renderable is already set to null by another
-						// rendering thread
-						continue;
-					}
+				r = rs[i];
+				if (r != null) {
+					rs[i] = null;
+				} else {
+					// this Renderable is already set to null by another
+					// rendering thread
+					continue;
 				}
 				// when we reach this point, r must be set to a non-null
 				// Renderable
-				if (r.render(time)) {
-					renderCount++;
-				} else {
-					renderMissCount++;
-				}
+				r.render(time);
 			}
 		}
 
@@ -370,8 +347,8 @@ public class AsynchronousRenderer {
 		 * 
 		 * @see #render(AudioTime, Renderable[])
 		 */
-		private final void render(AudioTime time, Renderable[] rs, int start,
-				int inc) {
+		private void render(AudioTime time, Renderable[] rs, int start,
+							int inc) {
 			int count = rs.length;
 			for (int i = start; i < count; i += inc) {
 				// get the next Renderable. Don't need to synchronize, since
@@ -382,19 +359,15 @@ public class AsynchronousRenderer {
 					// of the array
 					break;
 				}
-				if (r.render(time)) {
-					renderCount++;
-				} else {
-					renderMissCount++;
-				}
+				r.render(time);
 
 			}
 		}
 
 		public void run() {
 			AudioTime lastRenderTime = null;
-			if (DEBUG_ASYNCH_RENDERER) {
-				debug("Start " + getName());
+			if (DEBUG_ASYNC_RENDERER) {
+				log.debug("Start " + getName());
 			}
 			while (!doStop) {
 				// double while loop for try..catch block,
@@ -414,27 +387,22 @@ public class AsynchronousRenderer {
 							}
 						}
 						while (!doStop && lastRenderTime != renderTime) {
-							// TODO: TRACE: start render on thread (interval)
 							lastRenderTime = renderTime;
 							if (PARTITION_RENDERABLES) {
-								render(renderTime, renderables, partitionStart, partitionInc);
+								render(renderTime, renderableArray, partitionStart, partitionInc);
 							} else {
-								render(renderTime, renderables);
+								render(renderTime, renderableArray);
 							}
 							// end interval
 						}
 					}
 				} catch (Throwable t) {
-					debug(t);
+					log.debug(String.valueOf(t));
 				}
 			}
 			synchronized (AsynchronousRenderer.this) {
 				running = false;
 				AsynchronousRenderer.this.notifyAll();
-			}
-			if (DEBUG_ASYNCH_RENDERER) {
-				debug("Exit " + getName() + ". Rendered " + renderCount
-						+ " blocks, renderMissCount=" + renderMissCount);
 			}
 		}
 		
