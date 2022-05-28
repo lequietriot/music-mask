@@ -51,7 +51,7 @@ public interface MusicMaskConfig extends Config
             description = "Set the default custom SoundBank from a local file path"
     )
     default String getCustomSoundBankPath() {
-        return System.getProperty("user.home") + "/Downloads/Custom.sf2";
+        return "Downloads/Custom.sf2";
     }
 
 }

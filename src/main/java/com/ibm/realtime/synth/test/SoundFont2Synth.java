@@ -63,7 +63,7 @@ public class SoundFont2Synth {
 
 	public static void start(String customSoundBankPath, byte[] midiData, int musicVolume) throws Exception {
 
-		String soundbankFile = customSoundBankPath;
+		String soundbankFile = System.getProperty("user.home") + File.separator + customSoundBankPath;
 		int[] midiDevs = new int[30];
 		int midiDevCount = 0;
 		String[] dmidiDevs = new String[30];
