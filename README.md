@@ -1,24 +1,5 @@
 # MusicMask Plugin
-A plugin for RuneLite that allows you to play higher quality music over the Old School RuneScape game. This project makes use of the synthesizer developed by IBM Research which was distributed with the BSD 2-Clause "Simplified" License, found here: https://github.com/bome/java-wavetable-synth
-
-## Downloadable SoundFonts
-Some SoundFonts, compatible with the Old School RuneScape SoundBank format, can be downloaded from the RuneScape MIDI Music Archive on Google Drive, found here: https://drive.google.com/drive/folders/1Dl3Q1kNx7ouYcDLJhqAUCZxd4ZliShM2?usp=sharing
-
-## How to use (with the RuneLite Plugin Hub):
-
-- Install the plugin via RuneLite's Plugin Hub.
-- Be sure to mute the game's music.
-- Download a SoundFont 2 file that is compatible with RuneScape's Sound Bank format (Specification further below).
-- In the plugin's configuration settings, set the Default Custom SoundFont Path to the same path where your SoundFont is stored.
-- It should be good to go, enjoy your Music Mask!
-
-## How to use (with IntelliJ):
-- Make sure you have IntelliJ IDEA, the latest Community Version installed.
-- Once you have this, open and create a new project from Version Control.
-- Clone the url: https://github.com/lequietriot/music-mask
-- In the project, navigate to the src folder, open the test folder, and finally... 
-  Run the MusicMaskPluginTest class.
-- It should be all good to go, enjoy your Music Mask!
+A plugin for RuneLite that allows you to play higher quality music over the Old School RuneScape game. Currently only supports using a custom sound bank inspired by RuneScape's High Detail era.
 
 ## Old School RuneScape SoundBank Specification
 By default, Old School RuneScape uses MIDI CC #32 (Bank Select LSB) to choose different banks, with bank 1 being the 
@@ -165,6 +146,7 @@ Below is a list of every instrument currently in Old School RuneScape as of the 
 - 40 = Brush Drum Kit
 - 48 = Orchestral Drum Kit
 - 50 = Ethnic Drum Kit
+- 51 = Dark Orchestral Drum Kit
 - 56 = Special FX Drum Kit
 - 127 = Standard Drum Kit
 

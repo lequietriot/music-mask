@@ -33,25 +33,25 @@ import net.runelite.client.config.Range;
 public interface MusicMaskConfig extends Config
 {
     @Range(
-            max = 400
+            max = 255
     )
     @ConfigItem(
             position = 0,
             keyName = "setVolume",
-            name = "Set the music volume",
-            description = "Sets the custom music volume"
+            name = "Volume",
+            description = "Sets the music volume"
     )
     default int getMusicVolume() {
-        return 200;
+        return 127;
     }
     @ConfigItem(
             position = 1,
-            keyName = "setSoundFont",
-            name = "Default Custom SoundFont Path",
-            description = "Set the default custom SoundBank from a local file path"
+            keyName = "setSoundBank",
+            name = "Sound Bank",
+            description = "Set the default Sound Bank"
     )
-    default String getCustomSoundBankPath() {
-        return "Downloads/Custom.sf2";
+    default MusicMaskSoundBanks getSoundBank() {
+        return MusicMaskSoundBanks.HIGH_DETAIL;
     }
 
 }
