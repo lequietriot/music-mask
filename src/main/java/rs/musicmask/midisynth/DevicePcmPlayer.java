@@ -86,7 +86,7 @@ public class DevicePcmPlayer {
 	 */
 	public void open() throws LineUnavailableException {
 		try {
-			Info deviceInfo = new Info(SourceDataLine.class, this.format, 4096);
+			Info deviceInfo = new Info(SourceDataLine.class, this.format, 8192);
 			this.line = (SourceDataLine) AudioSystem.getLine(deviceInfo);
 			this.line.open();
 			this.line.start();
@@ -138,6 +138,7 @@ public class DevicePcmPlayer {
 			this.byteSamples[index * 2] = (byte) (sample >> 8);
 			this.byteSamples[index * 2 + 1] = (byte) (sample >> 16);
 		}
+
 		this.line.write(this.byteSamples, 0, length << 1);
 	}
 

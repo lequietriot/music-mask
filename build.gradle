@@ -10,7 +10,7 @@ repositories {
 	mavenCentral()
 }
 
-def runeLiteVersion = '1.9.10'
+def runeLiteVersion = '1.9.13.1'
 
 dependencies {
 	compileOnly group: 'net.runelite', name:'client', version: runeLiteVersion
@@ -25,7 +25,7 @@ dependencies {
 
 group = 'rs.musicmask'
 version = '1.0-SNAPSHOT'
-sourceCompatibility = '1.8'
+sourceCompatibility = '11'
 
 tasks.withType(JavaCompile) {
 	options.encoding = 'UTF-8'
