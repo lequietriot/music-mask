@@ -217,7 +217,7 @@ public class MidiAudioStream {
 	 * A method that loads all the music patches.
 	 */
 	public synchronized void loadMusicPatches() throws IOException {
-		for (int key = 0; key < 16384; key++) {
+		for (int key = 0; key < 384; key++) {
 			MusicPatch musicPatch = this.musicPatches.get(key);
 			if (musicPatch == null) {
 				if (MusicMaskPlugin.class.getResourceAsStream(File.separator + soundBankVersion + File.separator + "patches" + File.separator + key + ".txt") != null) {

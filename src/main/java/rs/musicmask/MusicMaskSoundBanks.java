@@ -28,7 +28,7 @@ package rs.musicmask;
 public enum MusicMaskSoundBanks {
 
     //Other sound sets coming in the future
-    HIGH_DETAIL("RuneScape High Detail");
+    HIGH_DETAIL("RSHD");
 
     private final String soundBankName;
 

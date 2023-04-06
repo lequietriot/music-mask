@@ -25,11 +25,8 @@
 
 package rs.musicmask.midisynth;
 
-import javax.sound.sampled.AudioFormat;
-import javax.sound.sampled.AudioSystem;
+import javax.sound.sampled.*;
 import javax.sound.sampled.DataLine.Info;
-import javax.sound.sampled.LineUnavailableException;
-import javax.sound.sampled.SourceDataLine;
 import java.util.Arrays;
 
 /**
@@ -85,17 +82,25 @@ public class DevicePcmPlayer {
 	 * @throws LineUnavailableException Try to re-open the device for sound output. If not possible, an error occurs.
 	 */
 	public void open() throws LineUnavailableException {
-		try {
-			Info deviceInfo = new Info(SourceDataLine.class, this.format, 8192);
-			this.line = (SourceDataLine) AudioSystem.getLine(deviceInfo);
-			this.line.open();
-			this.line.start();
-		} catch (LineUnavailableException lineUnavailableException) {
-			if (this.line.available() != -1) {
-				this.open();
-			} else {
-				this.line = null;
-				throw lineUnavailableException;
+		Mixer.Info[] mixers = AudioSystem.getMixerInfo();
+		for (Mixer.Info info : mixers) {
+			Mixer mixer = AudioSystem.getMixer(info);
+			try {
+				if (info.getName().toLowerCase().contains("primary") || info.getName().toLowerCase().contains("default")) {
+					DataLine.Info sourceDataLineInfo = new DataLine.Info(SourceDataLine.class, this.format, 8192);
+					if (mixer.isLineSupported(sourceDataLineInfo)) {
+						this.line = (SourceDataLine) mixer.getLine(sourceDataLineInfo);
+						this.line.open();
+						this.line.start();
+					}
+				}
+			} catch (LineUnavailableException lineUnavailableException) {
+				if (this.line.available() != -1) {
+					this.open();
+				} else {
+					this.line = null;
+					throw lineUnavailableException;
+				}
 			}
 		}
 	}

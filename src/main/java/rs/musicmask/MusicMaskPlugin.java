@@ -71,6 +71,8 @@ public class MusicMaskPlugin extends Plugin
 
     private Sequencer sequencer;
 
+    private MidiTrackLoader midiTrackLoader;
+
     @Override
     protected void startUp()
     {
@@ -82,49 +84,32 @@ public class MusicMaskPlugin extends Plugin
         else {
             clientVolume = client.getMusicVolume();
         }
+
         initSoundSynth();
     }
 
     private void initSoundSynth() {
+        client.setMusicVolume(1);
         currentTrackId = client.getMusicCurrentTrackId();
-        clientThread.invoke(() -> {
-            try {
+        try {
+            clientThread.invoke(() -> {
                 if (client.isPlayingJingle() && currentTrackId != -1) {
                     if (client.getIndex(11).getFileIds(currentTrackId) != null) {
-                        MidiTrackLoader trackLoader = new MidiTrackLoader(new ByteArrayInputStream(client.getIndex(11).loadData(currentTrackId, 0)));
-                        try {
-                            //Jingles are not supported at the moment, can cause glitches.
-                            //playSong(musicMaskConfig.getSoundBank().getSoundBankName(), trackLoader.getMidiSequence(), musicMaskConfig.getMusicVolume());
-                        } catch (Exception e) {
-                            e.printStackTrace();
-                        }
+                        midiTrackLoader = new MidiTrackLoader(new ByteArrayInputStream(client.getIndex(11).loadData(currentTrackId, 0)));
                     }
                 }
                 if (!client.isPlayingJingle() && currentTrackId != -1) {
                     if (client.getIndex(6).getFileIds(currentTrackId) != null) {
-                        MidiTrackLoader trackLoader = new MidiTrackLoader(new ByteArrayInputStream(client.getIndex(6).loadData(currentTrackId, 0)));
-                        try {
-                            playSong(musicMaskConfig.getSoundBank().getSoundBankName(), trackLoader.getMidiSequence(), musicMaskConfig.getMusicVolume());
-                        } catch (Exception e) {
-                            e.printStackTrace();
-                        }
+                        midiTrackLoader = new MidiTrackLoader(new ByteArrayInputStream(client.getIndex(6).loadData(currentTrackId, 0)));
                     }
                 }
-                if (client.getGameState().equals(GameState.LOGIN_SCREEN)) {
-                    if (client.getIndex(6).getFileIds(0) != null) {
-                        MidiTrackLoader trackLoader = new MidiTrackLoader(new ByteArrayInputStream(client.getIndex(6).loadData(0, 0)));
-                        try {
-                            playSong(musicMaskConfig.getSoundBank().getSoundBankName(), trackLoader.getMidiSequence(), musicMaskConfig.getMusicVolume());
-                        } catch (Exception e) {
-                            e.printStackTrace();
-                        }
-                    }
-                }
-                client.setMusicVolume(0);
-            } catch (Exception e) {
-                e.printStackTrace();
+            });
+            if (midiTrackLoader != null) {
+                playSong(musicMaskConfig.getSoundBank().getSoundBankName(), midiTrackLoader.getMidiSequence(), musicMaskConfig.getMusicVolume());
             }
-        });
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     @Provides
@@ -152,7 +137,9 @@ public class MusicMaskPlugin extends Plugin
                 sequencer.open();
                 sequencer.getTransmitter().setReceiver(midiReceiver);
                 sequencer.setSequence(midiSequence);
-                sequencer.setLoopCount(Sequencer.LOOP_CONTINUOUSLY);
+                if (!client.isPlayingJingle()) {
+                    sequencer.setLoopCount(Sequencer.LOOP_CONTINUOUSLY);
+                }
 
                 if (!sequencer.isRunning()) {
                     sequencer.start();
@@ -179,33 +166,18 @@ public class MusicMaskPlugin extends Plugin
 
     @Subscribe
     public void onClientTick(ClientTick clientTick) {
-        new Thread(() -> {
-            client.setMusicVolume(1);
-            client.setMusicVolume(0);
-            int lastTrackId = currentTrackId;
-            if (client.getMusicCurrentTrackId() != lastTrackId) {
-                currentTrackId = client.getMusicCurrentTrackId();
-                while (midiAudioStream != null && midiAudioStream.getVolume() > -1) {
-                    try {
-                        Thread.sleep(10);
-                        if (midiAudioStream != null) {
-                            midiAudioStream.setPcmStreamVolume(midiAudioStream.getVolume() - 1);
-                            if (midiAudioStream.getVolume() == 0) {
-                                if (sequencer != null && midiAudioStream != null) {
-                                    sequencer.stop();
-                                    sequencer.close();
-                                    sequencer = null;
-                                    midiAudioStream = null;
-                                    initSoundSynth();
-                                }
-                            }
-                        }
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
-                }
+        client.setMusicVolume(1);
+        int lastTrackId = currentTrackId;
+        if (client.getMusicCurrentTrackId() != lastTrackId) {
+            currentTrackId = client.getMusicCurrentTrackId();
+            if (sequencer != null && midiAudioStream != null) {
+                sequencer.stop();
+                sequencer.close();
+                sequencer = null;
+                midiAudioStream = null;
+                initSoundSynth();
             }
-        }).start();
+        }
     }
 
     @Subscribe

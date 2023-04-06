@@ -159,9 +159,11 @@ public class MidiReceiver implements Receiver {
                         midiSynth.allSoundOff(channel);
                     }
 
+                    /*
                     if (data1 == 121) {
                         midiSynth.resetAllControllers(channel);
                     }
+                     */
 
                     int value;
                     if (data1 == 6) {
