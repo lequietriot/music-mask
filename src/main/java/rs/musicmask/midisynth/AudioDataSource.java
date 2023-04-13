@@ -28,7 +28,6 @@ package rs.musicmask.midisynth;
 import jcraft.jorbis.OggVorbisDecoder;
 import rs.musicmask.MusicMaskPlugin;
 
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Objects;
@@ -68,10 +67,14 @@ public class AudioDataSource {
      * @param audioName The name of the audio resource to load.
      */
     public AudioDataSource(String audioName, String soundBankVersion) {
-        if (MusicMaskPlugin.class.getResourceAsStream(File.separator + soundBankVersion + File.separator + "samples" + File.separator + audioName + ".ogg") != null) {
-            InputStream inputStream = MusicMaskPlugin.class.getResourceAsStream(File.separator + soundBankVersion + File.separator + "samples" + File.separator + audioName + ".ogg");
-            if (inputStream != null) {
+        if (MusicMaskPlugin.class.getResourceAsStream(soundBankVersion + "/samples/" + audioName + ".ogg") != null) {
+            InputStream inputStream;
+            try {
+                inputStream = Objects.requireNonNull(MusicMaskPlugin.class.getResourceAsStream(soundBankVersion + "/samples/" + audioName + ".ogg"));
                 loadAudioSource(inputStream);
+                inputStream.close();
+            } catch (IOException e) {
+                e.printStackTrace();
             }
         }
     }
@@ -87,11 +90,21 @@ public class AudioDataSource {
             for (int index = 0; index < sampleData.length; index++) {
                 sampleData[index] = oggVorbisDecoder.pcmSampleData[index * 2 + 1];
             }
-            audioData = sampleData;
             sampleRate = oggVorbisDecoder.sampleRate;
             loopStart = oggVorbisDecoder.loopStart;
             loopEnd = oggVorbisDecoder.loopEnd;
             isLooping = loopStart != 0;
+
+            if (sampleData.length != loopEnd) {
+                byte[] soundTrimData = new byte[loopEnd];
+                for (int index = 0; index < soundTrimData.length; index++) {
+                    soundTrimData[index] = sampleData[index];
+                }
+                audioData = soundTrimData;
+            }
+            else {
+                audioData = sampleData;
+            }
         }
     }
 

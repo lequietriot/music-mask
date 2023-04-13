@@ -192,6 +192,12 @@ public class OggVorbisDecoder {
         if (comment.toLowerCase().contains("loop end=")) {
           loopEnd = Integer.parseInt(comment.toLowerCase().replace("loop end=", "").trim());
         }
+        if (comment.toLowerCase().contains("sample size=")) {
+          int sampleSize = Integer.parseInt(comment.toLowerCase().replace("sample size=", "").trim());
+          if (loopEnd != sampleSize) {
+            loopEnd = sampleSize;
+          }
+        }
         if (comment.toLowerCase().contains("sample rate=")) {
           sampleRate = Integer.parseInt(comment.toLowerCase().replace("sample rate=", "").trim());
         }

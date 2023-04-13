@@ -96,17 +96,16 @@ public class MusicMaskPlugin extends Plugin
                 if (client.isPlayingJingle() && currentTrackId != -1) {
                     if (client.getIndex(11).getFileIds(currentTrackId) != null) {
                         midiTrackLoader = new MidiTrackLoader(new ByteArrayInputStream(client.getIndex(11).loadData(currentTrackId, 0)));
+                        playSong(musicMaskConfig.getSoundBank().getSoundBankName(), midiTrackLoader.getMidiSequence(), musicMaskConfig.getMusicVolume());
                     }
                 }
                 if (!client.isPlayingJingle() && currentTrackId != -1) {
                     if (client.getIndex(6).getFileIds(currentTrackId) != null) {
                         midiTrackLoader = new MidiTrackLoader(new ByteArrayInputStream(client.getIndex(6).loadData(currentTrackId, 0)));
+                        playSong(musicMaskConfig.getSoundBank().getSoundBankName(), midiTrackLoader.getMidiSequence(), musicMaskConfig.getMusicVolume());
                     }
                 }
             });
-            if (midiTrackLoader != null) {
-                playSong(musicMaskConfig.getSoundBank().getSoundBankName(), midiTrackLoader.getMidiSequence(), musicMaskConfig.getMusicVolume());
-            }
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -120,13 +119,6 @@ public class MusicMaskPlugin extends Plugin
 
     public void playSong(String soundBankName, Sequence midiSequence, int volume) {
         new Thread(() -> {
-            if (sequencer != null && sequencer.isRunning()) {
-                sequencer.stop();
-                sequencer.close();
-                sequencer = null;
-                midiAudioStream = null;
-            }
-
             midiAudioStream = new MidiAudioStream(soundBankName);
             midiAudioStream.setInitialPatch(9, 128);
             midiAudioStream.setPcmStreamVolume(volume);
@@ -153,7 +145,7 @@ public class MusicMaskPlugin extends Plugin
                 do {
                     devicePcmPlayer.fill(devicePcmPlayer.samples, 256);
                     devicePcmPlayer.write();
-                } while (sequencer != null && sequencer.isRunning());
+                } while (sequencer != null && sequencer.isOpen() && sequencer.isRunning());
             } catch (MidiUnavailableException | InvalidMidiDataException | LineUnavailableException e) {
                 e.printStackTrace();
             }
@@ -166,18 +158,41 @@ public class MusicMaskPlugin extends Plugin
 
     @Subscribe
     public void onClientTick(ClientTick clientTick) {
-        client.setMusicVolume(1);
-        int lastTrackId = currentTrackId;
-        if (client.getMusicCurrentTrackId() != lastTrackId) {
-            currentTrackId = client.getMusicCurrentTrackId();
-            if (sequencer != null && midiAudioStream != null) {
-                sequencer.stop();
-                sequencer.close();
-                sequencer = null;
-                midiAudioStream = null;
-                initSoundSynth();
+        new Thread(() -> {
+            client.setMusicVolume(1);
+            int lastTrackId = currentTrackId;
+            if (client.getMusicCurrentTrackId() != lastTrackId && !client.isPlayingJingle()) {
+                currentTrackId = client.getMusicCurrentTrackId();
+                while (midiAudioStream != null && midiAudioStream.getVolume() > -1) {
+                    try {
+                        Thread.sleep(10);
+                        if (midiAudioStream != null) {
+                            midiAudioStream.setPcmStreamVolume(midiAudioStream.getVolume() - 1);
+                            if (midiAudioStream.getVolume() == 0) {
+                                if (sequencer != null && sequencer.isOpen() && midiAudioStream != null) {
+                                    sequencer.stop();
+                                    sequencer.close();
+                                    sequencer = null;
+                                    midiAudioStream = null;
+                                    initSoundSynth();
+                                }
+                            }
+                        }
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                }
             }
-        }
+            if (client.getMusicCurrentTrackId() != lastTrackId && client.isPlayingJingle()) {
+                if (sequencer != null && sequencer.isOpen() && midiAudioStream != null) {
+                    sequencer.stop();
+                    sequencer.close();
+                    sequencer = null;
+                    midiAudioStream = null;
+                    initSoundSynth();
+                }
+            }
+        }).start();
     }
 
     @Subscribe
@@ -186,7 +201,7 @@ public class MusicMaskPlugin extends Plugin
             setSongVolume((Integer.parseInt(configChanged.getNewValue())));
         }
         if (configChanged.getKey().equals("setSoundBank")) {
-            if (sequencer != null && midiAudioStream != null) {
+            if (sequencer != null && sequencer.isOpen() && midiAudioStream != null) {
                 sequencer.stop();
                 sequencer.close();
                 sequencer = null;
@@ -199,7 +214,7 @@ public class MusicMaskPlugin extends Plugin
 
     @Override
     protected void shutDown() {
-        if (sequencer != null && midiAudioStream != null) {
+        if (sequencer != null && sequencer.isOpen() && midiAudioStream != null) {
             sequencer.stop();
             sequencer.close();
             sequencer = null;
